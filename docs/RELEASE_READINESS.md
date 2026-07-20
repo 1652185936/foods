@@ -40,12 +40,12 @@
 - [x] 生产 Compose 由仓库名和 64 位 SHA-256 强制构造 `repository@sha256:digest`，并使用外部 TLS 入口和托管 PostgreSQL/Redis/S3，设置只读根文件系统、资源限制、健康检查、滚动更新和回滚策略。证据：[生产 Compose](../deploy/compose.production.yml)及[镜像工作流](../.github/workflows/server-image-build.yml)。
 - [x] production/staging 配置拒绝 HTTP origin、无 TLS 数据库/Redis、弱密码、开发 OTP 与模板凭据。证据：[服务端配置](../server/src/ordin/infrastructure/config.py)、[安全配置测试](../server/tests/unit/test_security_config.py)。
 - [x] 数据库迁移、备份/恢复、健康检查、识别 smoke、回滚、队列积压、对象清理和密钥轮换均有可执行运维步骤。证据：[运维手册](./OPERATIONS.md)。该项只证明 runbook 已具备，不代表 staging/production 已演练。
+- [x] 工程提交 `d7b9cd4` 的 GitHub `CI`、`Platform release build checks` 和 `Server container build check` 全部绿色；Android、iOS、Windows、macOS 和服务端镜像均有远程构建证据。证据：[验证记录](./VERIFICATION.md)。
 
 ## 当前仍需工程验证或实现
 
 - [ ] 断食完成通知在 Android/iOS/macOS/Windows 实际调度、取消并在冷启动后重建，拒绝/撤销权限时不影响数据库已提交状态。
 - [ ] 在 iOS、Windows、macOS 实际安装运行，验证 SQLCipher 已加载、数据库文件不可明文读取、错误密钥失败、升级读取和安全存储丢失恢复；Android 模拟器的加密文件、重开和错误密钥已通过。
-- [ ] 当前提交的 GitHub `CI`、`Platform release build checks`、`Server container build check` 全部绿色；工作流文件存在不等于远端 run 已通过。
 - [ ] Android/iOS 真机覆盖相机、相册、通知权限拒绝/撤销、后台终止、冷启动、弱网、跨日、DST 和账号切换；Windows/macOS 完成核心桌面 smoke。
 - [ ] 在物理 Android/iOS 上复跑核心端到端流程；Android 模拟器到真实 API、对象存储、Worker、同步和账号注销的整链路已通过。
 - [ ] 完成系统大字号、屏幕阅读器语义、对比度和不小于 44x44 pt 触控目标的真机无障碍验收。
