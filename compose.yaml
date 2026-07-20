@@ -1,0 +1,38 @@
+name: ordin
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ordin
+      POSTGRES_USER: ordin
+      POSTGRES_PASSWORD: ordin
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - ordin-postgres18-data:/var/lib/postgresql
+      - ./server/docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ordin -d ordin"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - ordin-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  ordin-postgres18-data:
+  ordin-redis-data:
