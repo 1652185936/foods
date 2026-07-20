@@ -5,8 +5,16 @@
 .env
 .env.*
 !.env.example
+!deploy/.env.production.example
+deploy/.env.production
 *.pem
 *.key
+*.p8
+*.p12
+*.pfx
+*.cer
+*.mobileprovision
+*.provisionprofile
 secrets/
 
 # Operating systems and editors
@@ -25,8 +33,9 @@ Desktop.ini
 .pub/
 build/
 coverage/
-android/local.properties
-android/key.properties
+**/android/local.properties
+**/android/key.properties
+**/.kotlin/
 **/*.jks
 **/*.keystore
 ios/Pods/

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app/foods_app.dart';
+import 'core/bootstrap/app_bootstrap.dart';
 
 void main() {
-  runApp(const ProviderScope(child: FoodsApp()));
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: AppBootstrapHost()));
 }

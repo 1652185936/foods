@@ -1,0 +1,157 @@
+name: Platform release build checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-builds-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# These artifacts only prove that release-mode sources compile on each host.
+# This workflow never receives store signing credentials, and its outputs must
+# not be treated as production or distribution builds.
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout_minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: android
+            label: Android release AAB build check
+            os: ubuntu-latest
+            timeout_minutes: 40
+            precache_flag: --android
+            build_target: appbundle
+            build_options: ""
+            allow_unsigned_release_check: "1"
+            artifact_name: android-release-aab-build-check
+            artifact_path: apps/client/build/app/outputs/bundle/release/app-release.aab
+          - target: ios
+            label: iOS release no-codesign build check
+            os: macos-latest
+            timeout_minutes: 45
+            precache_flag: --ios
+            build_target: ios
+            build_options: --no-codesign
+            allow_unsigned_release_check: "0"
+            artifact_name: ios-release-no-codesign-build-check
+            artifact_path: apps/client/build/ios/iphoneos/Runner.app
+          - target: windows
+            label: Windows release build check
+            os: windows-latest
+            timeout_minutes: 45
+            precache_flag: --windows
+            build_target: windows
+            build_options: ""
+            allow_unsigned_release_check: "0"
+            artifact_name: windows-release-build-check
+            artifact_path: apps/client/build/windows/x64/runner/Release
+          - target: macos
+            label: macOS release build check
+            os: macos-latest
+            timeout_minutes: 45
+            precache_flag: --macos
+            build_target: macos
+            build_options: ""
+            allow_unsigned_release_check: "0"
+            artifact_name: macos-release-build-check
+            artifact_path: apps/client/build/macos/Build/Products/Release/*.app
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java for Android
+        if: matrix.target == 'android'
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.44.4
+          cache: true
+          pub-cache: true
+
+      - name: Enable Windows desktop
+        if: matrix.target == 'windows'
+        run: flutter config --enable-windows-desktop
+
+      - name: Enable macOS desktop
+        if: matrix.target == 'macos'
+        run: flutter config --enable-macos-desktop
+
+      - name: Precache target engine and native toolchain artifacts
+        run: flutter precache ${{ matrix.precache_flag }}
+
+      - name: Restore workspace dependencies from lockfile
+        run: flutter pub get --enforce-lockfile
+
+      - name: Resolve client version from pubspec
+        id: client-version
+        shell: pwsh
+        working-directory: apps/client
+        run: |
+          $matches = Select-String -Path pubspec.yaml -Pattern '^version:\s*([^\s]+)\s*$'
+          if ($matches.Count -ne 1) {
+            throw 'apps/client/pubspec.yaml must contain exactly one version field.'
+          }
+          $version = $matches[0].Matches[0].Groups[1].Value
+          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\+[0-9]+$') {
+            throw "Unsupported Flutter build version: $version"
+          }
+          "value=$version" | Add-Content -Path $env:GITHUB_OUTPUT
+
+      - name: Build release-mode target
+        shell: pwsh
+        env:
+          ORDIN_ALLOW_UNSIGNED_RELEASE_CHECK: ${{ matrix.allow_unsigned_release_check }}
+        run: >-
+          flutter build ${{ matrix.build_target }}
+          --release ${{ matrix.build_options }}
+          --dart-define=ORDIN_API_BASE_URL=https://api.example.com
+          --dart-define=ORDIN_APP_VERSION=${{ steps.client-version.outputs.value }}
+        working-directory: apps/client
+
+      - name: Verify expected build output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -Path '${{ matrix.artifact_path }}')) {
+            throw 'Expected build output was not produced: ${{ matrix.artifact_path }}'
+          }
+
+      - name: Record build-only scope
+        shell: pwsh
+        run: |
+          @(
+            '### Build verification only'
+            ''
+            '- Target: `${{ matrix.target }}`'
+            '- Flutter: `3.44.4`'
+            '- Client version: `${{ steps.client-version.outputs.value }}` (from `apps/client/pubspec.yaml`)'
+            '- No production signing credentials were supplied.'
+            '- The uploaded artifact is not approved for distribution.'
+          ) | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload short-lived build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ matrix.artifact_name }}-${{ github.sha }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          retention-days: 3

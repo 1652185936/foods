@@ -1,6 +1,568 @@
 {
   "components": {
     "schemas": {
+      "AccountDataExportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "exportedAt": {
+            "format": "date-time",
+            "title": "Exportedat",
+            "type": "string"
+          },
+          "fastingSessions": {
+            "items": {
+              "$ref": "#/components/schemas/FastingSessionResponse"
+            },
+            "title": "Fastingsessions",
+            "type": "array"
+          },
+          "healthProfile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meals": {
+            "items": {
+              "$ref": "#/components/schemas/AccountExportMeal"
+            },
+            "title": "Meals",
+            "type": "array"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppPreferencesResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recognitions": {
+            "items": {
+              "$ref": "#/components/schemas/AccountExportRecognition"
+            },
+            "title": "Recognitions",
+            "type": "array"
+          },
+          "schemaVersion": {
+            "const": 1,
+            "default": 1,
+            "title": "Schemaversion",
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "exportedAt",
+          "user",
+          "healthProfile",
+          "preferences",
+          "meals",
+          "fastingSessions",
+          "recognitions"
+        ],
+        "title": "AccountDataExportResponse",
+        "type": "object"
+      },
+      "AccountDeletionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmation": {
+            "const": "DELETE_MY_ACCOUNT",
+            "title": "Confirmation",
+            "type": "string"
+          },
+          "deviceInstallationId": {
+            "format": "uuid",
+            "title": "Deviceinstallationid",
+            "type": "string"
+          },
+          "refreshToken": {
+            "maxLength": 512,
+            "minLength": 32,
+            "title": "Refreshtoken",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "refreshToken",
+          "deviceInstallationId"
+        ],
+        "title": "AccountDeletionInput",
+        "type": "object"
+      },
+      "AccountExportCorrection": {
+        "additionalProperties": false,
+        "properties": {
+          "baseVersion": {
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "createdAtUtc": {
+            "format": "date-time",
+            "title": "Createdatutc",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AccountExportCorrectionItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "baseVersion",
+          "createdAtUtc",
+          "items"
+        ],
+        "title": "AccountExportCorrection",
+        "type": "object"
+      },
+      "AccountExportCorrectionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "canonicalFoodId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonicalfoodid"
+          },
+          "carbsMg": {
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "proteinMg": {
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "name",
+          "canonicalFoodId",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg"
+        ],
+        "title": "AccountExportCorrectionItem",
+        "type": "object"
+      },
+      "AccountExportMeal": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAtUtc": {
+            "format": "date-time",
+            "title": "Createdatutc",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isWithinEatingWindow": {
+            "title": "Iswithineatingwindow",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AccountExportMealItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "localDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Localday",
+            "type": "string"
+          },
+          "occurredAtUtc": {
+            "format": "date-time",
+            "title": "Occurredatutc",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/MealSource"
+          },
+          "timeZoneId": {
+            "title": "Timezoneid",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MealType"
+          },
+          "updatedAtUtc": {
+            "format": "date-time",
+            "title": "Updatedatutc",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "source",
+          "occurredAtUtc",
+          "timeZoneId",
+          "localDay",
+          "isWithinEatingWindow",
+          "items",
+          "version",
+          "createdAtUtc",
+          "updatedAtUtc"
+        ],
+        "title": "AccountExportMeal",
+        "type": "object"
+      },
+      "AccountExportMealItem": {
+        "additionalProperties": false,
+        "properties": {
+          "carbsMg": {
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proteinMg": {
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg"
+        ],
+        "title": "AccountExportMealItem",
+        "type": "object"
+      },
+      "AccountExportRecognition": {
+        "additionalProperties": false,
+        "properties": {
+          "completedAtUtc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completedatutc"
+          },
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/AccountExportCorrection"
+            },
+            "title": "Corrections",
+            "type": "array"
+          },
+          "createdAtUtc": {
+            "format": "date-time",
+            "title": "Createdatutc",
+            "type": "string"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AccountExportRecognitionItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "needsReviewReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needsreviewreason"
+          },
+          "overallConfidenceMilli": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallconfidencemilli"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updatedAtUtc": {
+            "format": "date-time",
+            "title": "Updatedatutc",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "overallConfidenceMilli",
+          "needsReviewReason",
+          "errorCode",
+          "version",
+          "createdAtUtc",
+          "updatedAtUtc",
+          "completedAtUtc",
+          "items",
+          "corrections"
+        ],
+        "title": "AccountExportRecognition",
+        "type": "object"
+      },
+      "AccountExportRecognitionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "alternatives": {
+            "items": {
+              "$ref": "#/components/schemas/RecognitionAlternativeResponse"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "canonicalFoodId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonicalfoodid"
+          },
+          "carbsMg": {
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "confidenceMilli": {
+            "title": "Confidencemilli",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isUserCorrected": {
+            "title": "Isusercorrected",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "proteinMg": {
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "name",
+          "canonicalFoodId",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg",
+          "confidenceMilli",
+          "alternatives",
+          "isUserCorrected"
+        ],
+        "title": "AccountExportRecognitionItem",
+        "type": "object"
+      },
+      "AppPreferencesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changeCursor": {
+            "title": "Changecursor",
+            "type": "integer"
+          },
+          "createdAtUtc": {
+            "format": "date-time",
+            "title": "Createdatutc",
+            "type": "string"
+          },
+          "dailyEnergyTargetKcal": {
+            "title": "Dailyenergytargetkcal",
+            "type": "integer"
+          },
+          "fastingReminderEnabled": {
+            "title": "Fastingreminderenabled",
+            "type": "boolean"
+          },
+          "selectedFastingPlan": {
+            "$ref": "#/components/schemas/FastingPlan"
+          },
+          "updatedAtUtc": {
+            "format": "date-time",
+            "title": "Updatedatutc",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dailyEnergyTargetKcal",
+          "selectedFastingPlan",
+          "fastingReminderEnabled",
+          "version",
+          "changeCursor",
+          "createdAtUtc",
+          "updatedAtUtc"
+        ],
+        "title": "AppPreferencesResponse",
+        "type": "object"
+      },
+      "AppPreferencesSyncPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "dailyEnergyTargetKcal": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 20000.0,
+            "title": "Dailyenergytargetkcal",
+            "type": "integer"
+          },
+          "fastingReminderEnabled": {
+            "title": "Fastingreminderenabled",
+            "type": "boolean"
+          },
+          "selectedFastingPlan": {
+            "$ref": "#/components/schemas/FastingPlan"
+          }
+        },
+        "required": [
+          "dailyEnergyTargetKcal",
+          "selectedFastingPlan",
+          "fastingReminderEnabled"
+        ],
+        "title": "AppPreferencesSyncPayload",
+        "type": "object"
+      },
       "AuthSessionResponse": {
         "additionalProperties": false,
         "properties": {
@@ -28,6 +590,57 @@
         "title": "ClientPlatform",
         "type": "string"
       },
+      "CompletedRecognitionUploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "sourceContentType": {
+            "title": "Sourcecontenttype",
+            "type": "string"
+          },
+          "sourceExpiresAt": {
+            "format": "date-time",
+            "title": "Sourceexpiresat",
+            "type": "string"
+          },
+          "sourceObjectKey": {
+            "title": "Sourceobjectkey",
+            "type": "string"
+          },
+          "sourceSizeBytes": {
+            "title": "Sourcesizebytes",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "uploadSessionId": {
+            "format": "uuid",
+            "title": "Uploadsessionid",
+            "type": "string"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "uploadSessionId",
+          "status",
+          "sourceObjectKey",
+          "sourceContentType",
+          "sourceSizeBytes",
+          "width",
+          "height",
+          "sourceExpiresAt"
+        ],
+        "title": "CompletedRecognitionUploadResponse",
+        "type": "object"
+      },
       "DeviceInput": {
         "additionalProperties": false,
         "properties": {
@@ -52,6 +665,213 @@
           "appVersion"
         ],
         "title": "DeviceInput",
+        "type": "object"
+      },
+      "FastingPlan": {
+        "enum": [
+          "gentle",
+          "balanced",
+          "advanced"
+        ],
+        "title": "FastingPlan",
+        "type": "string"
+      },
+      "FastingSessionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FastingSessionResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FastingSessionListResponse",
+        "type": "object"
+      },
+      "FastingSessionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changeCursor": {
+            "title": "Changecursor",
+            "type": "integer"
+          },
+          "createdAtUtc": {
+            "format": "date-time",
+            "title": "Createdatutc",
+            "type": "string"
+          },
+          "endedAtUtc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endedatutc"
+          },
+          "endedLocalDay": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endedlocalday"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/FastingPlan"
+          },
+          "startedAtUtc": {
+            "format": "date-time",
+            "title": "Startedatutc",
+            "type": "string"
+          },
+          "startedLocalDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Startedlocalday",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FastingSessionStatus"
+          },
+          "targetEndAtUtc": {
+            "format": "date-time",
+            "title": "Targetendatutc",
+            "type": "string"
+          },
+          "targetEndLocalDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Targetendlocalday",
+            "type": "string"
+          },
+          "timeZoneId": {
+            "title": "Timezoneid",
+            "type": "string"
+          },
+          "updatedAtUtc": {
+            "format": "date-time",
+            "title": "Updatedatutc",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "plan",
+          "status",
+          "startedAtUtc",
+          "targetEndAtUtc",
+          "endedAtUtc",
+          "timeZoneId",
+          "startedLocalDay",
+          "targetEndLocalDay",
+          "version",
+          "changeCursor",
+          "createdAtUtc",
+          "updatedAtUtc"
+        ],
+        "title": "FastingSessionResponse",
+        "type": "object"
+      },
+      "FastingSessionStatus": {
+        "enum": [
+          "active",
+          "completed",
+          "cancelled"
+        ],
+        "title": "FastingSessionStatus",
+        "type": "string"
+      },
+      "FastingSessionSyncPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "endedAtUtc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endedatutc"
+          },
+          "endedLocalDay": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endedlocalday"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/FastingPlan"
+          },
+          "startedAtUtc": {
+            "format": "date-time",
+            "title": "Startedatutc",
+            "type": "string"
+          },
+          "startedLocalDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Startedlocalday",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FastingSessionStatus"
+          },
+          "targetEndAtUtc": {
+            "format": "date-time",
+            "title": "Targetendatutc",
+            "type": "string"
+          },
+          "targetEndLocalDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Targetendlocalday",
+            "type": "string"
+          },
+          "timeZoneId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_+./-]+$",
+            "title": "Timezoneid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan",
+          "status",
+          "startedAtUtc",
+          "targetEndAtUtc",
+          "timeZoneId",
+          "startedLocalDay",
+          "targetEndLocalDay"
+        ],
+        "title": "FastingSessionSyncPayload",
         "type": "object"
       },
       "FieldProblem": {
@@ -94,7 +914,7 @@
           "birthDate": {
             "anyOf": [
               {
-                "format": "date",
+                "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
                 "type": "string"
               },
               {
@@ -167,7 +987,7 @@
           "birthDate": {
             "anyOf": [
               {
-                "format": "date",
+                "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
                 "type": "string"
               },
               {
@@ -252,7 +1072,6 @@
         },
         "required": [
           "userId",
-          "birthDate",
           "heightCm",
           "currentWeightKg",
           "targetWeightKg",
@@ -276,6 +1095,296 @@
         },
         "title": "HealthResponse",
         "type": "object"
+      },
+      "MealItemInputModel": {
+        "additionalProperties": false,
+        "properties": {
+          "carbsMg": {
+            "maximum": 10000000.0,
+            "minimum": 0.0,
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "maximum": 10000000.0,
+            "minimum": 0.0,
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "imageReference": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagereference"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "proteinMg": {
+            "maximum": 10000000.0,
+            "minimum": 0.0,
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000000.0,
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg"
+        ],
+        "title": "MealItemInputModel",
+        "type": "object"
+      },
+      "MealItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "carbsMg": {
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "imageReference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagereference"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proteinMg": {
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg",
+          "imageReference"
+        ],
+        "title": "MealItemResponse",
+        "type": "object"
+      },
+      "MealListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MealResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MealListResponse",
+        "type": "object"
+      },
+      "MealResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changeCursor": {
+            "title": "Changecursor",
+            "type": "integer"
+          },
+          "createdAtUtc": {
+            "format": "date-time",
+            "title": "Createdatutc",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isWithinEatingWindow": {
+            "title": "Iswithineatingwindow",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MealItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "localDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Localday",
+            "type": "string"
+          },
+          "occurredAtUtc": {
+            "format": "date-time",
+            "title": "Occurredatutc",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/MealSource"
+          },
+          "timeZoneId": {
+            "title": "Timezoneid",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MealType"
+          },
+          "updatedAtUtc": {
+            "format": "date-time",
+            "title": "Updatedatutc",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "source",
+          "occurredAtUtc",
+          "timeZoneId",
+          "localDay",
+          "isWithinEatingWindow",
+          "items",
+          "version",
+          "changeCursor",
+          "createdAtUtc",
+          "updatedAtUtc"
+        ],
+        "title": "MealResponse",
+        "type": "object"
+      },
+      "MealSource": {
+        "enum": [
+          "manual",
+          "recognition",
+          "recipe"
+        ],
+        "title": "MealSource",
+        "type": "string"
+      },
+      "MealSyncPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "isWithinEatingWindow": {
+            "title": "Iswithineatingwindow",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MealItemInputModel"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "localDay": {
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+            "title": "Localday",
+            "type": "string"
+          },
+          "occurredAtUtc": {
+            "format": "date-time",
+            "title": "Occurredatutc",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/MealSource"
+          },
+          "timeZoneId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_+./-]+$",
+            "title": "Timezoneid",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MealType"
+          }
+        },
+        "required": [
+          "type",
+          "source",
+          "occurredAtUtc",
+          "timeZoneId",
+          "localDay",
+          "isWithinEatingWindow",
+          "items"
+        ],
+        "title": "MealSyncPayload",
+        "type": "object"
+      },
+      "MealType": {
+        "enum": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "title": "MealType",
+        "type": "string"
       },
       "OtpChallengeInput": {
         "additionalProperties": false,
@@ -414,6 +1523,408 @@
         "title": "ReadinessResponse",
         "type": "object"
       },
+      "RecognitionAlternativeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "confidenceMilli": {
+            "title": "Confidencemilli",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "confidenceMilli"
+        ],
+        "title": "RecognitionAlternativeResponse",
+        "type": "object"
+      },
+      "RecognitionCorrectionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedVersion": {
+            "minimum": 1.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecognitionCorrectionItemInput"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "items"
+        ],
+        "title": "RecognitionCorrectionInput",
+        "type": "object"
+      },
+      "RecognitionCorrectionItemInput": {
+        "additionalProperties": false,
+        "properties": {
+          "canonicalFoodId": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonicalfoodid"
+          },
+          "carbsMg": {
+            "maximum": 10000000.0,
+            "minimum": 0.0,
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "maximum": 10000000.0,
+            "minimum": 0.0,
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "proteinMg": {
+            "maximum": 10000000.0,
+            "minimum": 0.0,
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000000.0,
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg"
+        ],
+        "title": "RecognitionCorrectionItemInput",
+        "type": "object"
+      },
+      "RecognitionCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "uploadSessionId": {
+            "format": "uuid",
+            "title": "Uploadsessionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uploadSessionId"
+        ],
+        "title": "RecognitionCreateInput",
+        "type": "object"
+      },
+      "RecognitionItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "alternatives": {
+            "items": {
+              "$ref": "#/components/schemas/RecognitionAlternativeResponse"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "canonicalFoodId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonicalfoodid"
+          },
+          "carbsMg": {
+            "title": "Carbsmg",
+            "type": "integer"
+          },
+          "confidenceMilli": {
+            "title": "Confidencemilli",
+            "type": "integer"
+          },
+          "energyKcal": {
+            "title": "Energykcal",
+            "type": "integer"
+          },
+          "fatMg": {
+            "title": "Fatmg",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isUserCorrected": {
+            "title": "Isusercorrected",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "proteinMg": {
+            "title": "Proteinmg",
+            "type": "integer"
+          },
+          "servingMilli": {
+            "title": "Servingmilli",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "name",
+          "canonicalFoodId",
+          "servingMilli",
+          "energyKcal",
+          "proteinMg",
+          "carbsMg",
+          "fatMg",
+          "confidenceMilli",
+          "alternatives",
+          "isUserCorrected"
+        ],
+        "title": "RecognitionItemResponse",
+        "type": "object"
+      },
+      "RecognitionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "completedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completedat"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecognitionItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "needsReviewReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needsreviewreason"
+          },
+          "overallConfidenceMilli": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallconfidencemilli"
+          },
+          "providerName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providername"
+          },
+          "sourceExpiresAt": {
+            "format": "date-time",
+            "title": "Sourceexpiresat",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "uploadSessionId": {
+            "format": "uuid",
+            "title": "Uploadsessionid",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "uploadSessionId",
+          "status",
+          "providerName",
+          "overallConfidenceMilli",
+          "needsReviewReason",
+          "errorCode",
+          "version",
+          "sourceExpiresAt",
+          "createdAt",
+          "updatedAt",
+          "completedAt",
+          "items"
+        ],
+        "title": "RecognitionResponse",
+        "type": "object"
+      },
+      "RecognitionUploadInput": {
+        "additionalProperties": false,
+        "properties": {
+          "checksumSha256": {
+            "pattern": "^[0-9a-fA-F]{64}$",
+            "title": "Checksumsha256",
+            "type": "string"
+          },
+          "contentType": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ],
+            "title": "Contenttype",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 20971520.0,
+            "title": "Sizebytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes",
+          "checksumSha256"
+        ],
+        "title": "RecognitionUploadInput",
+        "type": "object"
+      },
+      "RecognitionUploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "expiresAt": {
+            "format": "date-time",
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "objectKey": {
+            "title": "Objectkey",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "uploadHeaders": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Uploadheaders",
+            "type": "object"
+          },
+          "uploadSessionId": {
+            "format": "uuid",
+            "title": "Uploadsessionid",
+            "type": "string"
+          },
+          "uploadUrl": {
+            "title": "Uploadurl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uploadSessionId",
+          "objectKey",
+          "status",
+          "uploadUrl",
+          "uploadHeaders",
+          "expiresAt"
+        ],
+        "title": "RecognitionUploadResponse",
+        "type": "object"
+      },
       "RefreshTokenInput": {
         "additionalProperties": false,
         "properties": {
@@ -435,6 +1946,297 @@
         ],
         "title": "RefreshTokenInput",
         "type": "object"
+      },
+      "SyncAction": {
+        "enum": [
+          "upsert",
+          "delete"
+        ],
+        "title": "SyncAction",
+        "type": "string"
+      },
+      "SyncChangeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "appPreferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppPreferencesResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changeCursor": {
+            "title": "Changecursor",
+            "type": "integer"
+          },
+          "deletedAtUtc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletedatutc"
+          },
+          "entityId": {
+            "title": "Entityid",
+            "type": "string"
+          },
+          "entityType": {
+            "$ref": "#/components/schemas/SyncEntityType"
+          },
+          "fastingSession": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FastingSessionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MealResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityId",
+          "version",
+          "changeCursor",
+          "deletedAtUtc"
+        ],
+        "title": "SyncChangeResponse",
+        "type": "object"
+      },
+      "SyncEntityType": {
+        "enum": [
+          "mealLog",
+          "fastingSession",
+          "appPreferences"
+        ],
+        "title": "SyncEntityType",
+        "type": "string"
+      },
+      "SyncOperationInput": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/SyncAction"
+          },
+          "appPreferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppPreferencesSyncPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entityId": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Entityid",
+            "type": "string"
+          },
+          "entityType": {
+            "$ref": "#/components/schemas/SyncEntityType"
+          },
+          "expectedVersion": {
+            "minimum": 0.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "fastingSession": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FastingSessionSyncPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MealSyncPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operationId": {
+            "format": "uuid",
+            "title": "Operationid",
+            "type": "string"
+          },
+          "payloadVersion": {
+            "const": 1,
+            "default": 1,
+            "title": "Payloadversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "operationId",
+          "entityType",
+          "entityId",
+          "action",
+          "expectedVersion"
+        ],
+        "title": "SyncOperationInput",
+        "type": "object"
+      },
+      "SyncPullResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/SyncChangeResponse"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "hasMore": {
+            "title": "Hasmore",
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "title": "Nextcursor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "changes",
+          "nextCursor",
+          "hasMore"
+        ],
+        "title": "SyncPullResponse",
+        "type": "object"
+      },
+      "SyncPushInput": {
+        "additionalProperties": false,
+        "properties": {
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/SyncOperationInput"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Operations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "operations"
+        ],
+        "title": "SyncPushInput",
+        "type": "object"
+      },
+      "SyncPushResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SyncWriteResultResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "SyncPushResponse",
+        "type": "object"
+      },
+      "SyncWriteResultResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changeCursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changecursor"
+          },
+          "entityId": {
+            "title": "Entityid",
+            "type": "string"
+          },
+          "entityType": {
+            "$ref": "#/components/schemas/SyncEntityType"
+          },
+          "operationId": {
+            "format": "uuid",
+            "title": "Operationid",
+            "type": "string"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "serverVersion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serverversion"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SyncWriteStatus"
+          }
+        },
+        "required": [
+          "operationId",
+          "entityType",
+          "entityId",
+          "status",
+          "replayed",
+          "serverVersion",
+          "changeCursor"
+        ],
+        "title": "SyncWriteResultResponse",
+        "type": "object"
+      },
+      "SyncWriteStatus": {
+        "enum": [
+          "applied",
+          "versionConflict",
+          "notFound",
+          "idempotencyConflict",
+          "activeFastingConflict"
+        ],
+        "title": "SyncWriteStatus",
+        "type": "string"
       },
       "TokenPairResponse": {
         "additionalProperties": false,
@@ -791,6 +2593,150 @@
         ]
       }
     },
+    "/api/v1/fasting-sessions": {
+      "get": {
+        "operationId": "listFastingSessions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FastingSessionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastingSessionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "List current fasting sessions",
+        "tags": [
+          "fasting"
+        ]
+      }
+    },
+    "/api/v1/fasting-sessions/{fastingSessionId}": {
+      "get": {
+        "operationId": "getFastingSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fastingSessionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fastingsessionid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastingSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Get a current fasting session",
+        "tags": [
+          "fasting"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "getHealth",
@@ -809,6 +2755,151 @@
         "summary": "Check API health",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/meals": {
+      "get": {
+        "operationId": "listMeals",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "localDay",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Localday"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "List current meal records",
+        "tags": [
+          "meals"
+        ]
+      }
+    },
+    "/api/v1/meals/{mealId}": {
+      "get": {
+        "operationId": "getMeal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mealId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Mealid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Get a current meal record",
+        "tags": [
+          "meals"
         ]
       }
     },
@@ -843,7 +2934,580 @@
         ]
       }
     },
+    "/api/v1/recognition-uploads": {
+      "post": {
+        "operationId": "createRecognitionUpload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecognitionUploadInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Create a short-lived direct image upload",
+        "tags": [
+          "recognition"
+        ]
+      }
+    },
+    "/api/v1/recognition-uploads/{uploadSessionId}/complete": {
+      "post": {
+        "operationId": "completeRecognitionUpload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uploadSessionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Uploadsessionid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletedRecognitionUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Validate, decode, and sanitize an uploaded image",
+        "tags": [
+          "recognition"
+        ]
+      }
+    },
+    "/api/v1/recognitions": {
+      "post": {
+        "operationId": "createRecognition",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecognitionCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Queue food recognition for a sanitized upload",
+        "tags": [
+          "recognition"
+        ]
+      }
+    },
+    "/api/v1/recognitions/{recognitionId}": {
+      "get": {
+        "operationId": "getRecognition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recognitionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Recognitionid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Get a food-recognition task and its structured candidates",
+        "tags": [
+          "recognition"
+        ]
+      }
+    },
+    "/api/v1/recognitions/{recognitionId}/correction": {
+      "put": {
+        "operationId": "correctRecognition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recognitionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Recognitionid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecognitionCorrectionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Replace recognition candidates with a user-reviewed result",
+        "tags": [
+          "recognition"
+        ]
+      }
+    },
+    "/api/v1/sync/pull": {
+      "get": {
+        "operationId": "pullSyncChanges",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPullResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Pull ordered changes after a synchronization cursor",
+        "tags": [
+          "synchronization"
+        ]
+      }
+    },
+    "/api/v1/sync/push": {
+      "post": {
+        "operationId": "pushSyncOperations",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncPushInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPushResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Push an ordered batch of offline operations",
+        "tags": [
+          "synchronization"
+        ]
+      }
+    },
     "/api/v1/users/me": {
+      "delete": {
+        "operationId": "deleteCurrentUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeletionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Permanently delete the current account and all of its data",
+        "tags": [
+          "users"
+        ]
+      },
       "get": {
         "operationId": "getCurrentUser",
         "responses": {
@@ -948,6 +3612,62 @@
           }
         ],
         "summary": "Update the current user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/data-export": {
+      "get": {
+        "operationId": "exportCurrentUserData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDataExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Export a bounded, consistent snapshot of the current user's data",
         "tags": [
           "users"
         ]
@@ -1068,6 +3788,52 @@
           }
         ],
         "summary": "Create or replace the current health profile",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/preferences": {
+      "get": {
+        "operationId": "getCurrentAppPreferences",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppPreferencesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "AccessToken": []
+          }
+        ],
+        "summary": "Get the current application preferences",
         "tags": [
           "users"
         ]

@@ -52,7 +52,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
+IDI_APP_ICON            ICON                    "resources\\ordin_app_icon.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.ordin.foods" "\0"
-            VALUE "FileDescription", "Foods" "\0"
+            VALUE "FileDescription", "好好吃饭" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "foods_client" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.ordin.foods. All rights reserved." "\0"
             VALUE "OriginalFilename", "foods_client.exe" "\0"
-            VALUE "ProductName", "Foods" "\0"
+            VALUE "ProductName", "好好吃饭" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,0 +1,224 @@
+name: ${ORDIN_COMPOSE_PROJECT_NAME:-ordin-production}
+
+x-backend-environment: &backend-environment
+  ORDIN_ENVIRONMENT: production
+  ORDIN_PUBLIC_API_ORIGIN: ${ORDIN_PUBLIC_API_ORIGIN:?ORDIN_PUBLIC_API_ORIGIN is required}
+  ORDIN_DATABASE_URL: ${ORDIN_DATABASE_URL:?ORDIN_DATABASE_URL is required}
+  ORDIN_REDIS_URL: ${ORDIN_REDIS_URL:?ORDIN_REDIS_URL is required}
+  ORDIN_CELERY_BROKER_URL: ${ORDIN_CELERY_BROKER_URL:?ORDIN_CELERY_BROKER_URL is required}
+  ORDIN_S3_ENDPOINT_URL: ${ORDIN_S3_ENDPOINT_URL:?ORDIN_S3_ENDPOINT_URL is required}
+  ORDIN_S3_PUBLIC_ENDPOINT_URL: ${ORDIN_S3_PUBLIC_ENDPOINT_URL:?ORDIN_S3_PUBLIC_ENDPOINT_URL is required}
+  ORDIN_S3_REGION: ${ORDIN_S3_REGION:?ORDIN_S3_REGION is required}
+  ORDIN_S3_BUCKET: ${ORDIN_S3_BUCKET:?ORDIN_S3_BUCKET is required}
+  ORDIN_S3_ACCESS_KEY_ID: ${ORDIN_S3_ACCESS_KEY_ID:?ORDIN_S3_ACCESS_KEY_ID is required}
+  ORDIN_S3_SECRET_ACCESS_KEY: ${ORDIN_S3_SECRET_ACCESS_KEY:?ORDIN_S3_SECRET_ACCESS_KEY is required}
+  ORDIN_S3_FORCE_PATH_STYLE: ${ORDIN_S3_FORCE_PATH_STYLE:?ORDIN_S3_FORCE_PATH_STYLE is required}
+  ORDIN_JWT_ISSUER: ${ORDIN_JWT_ISSUER:?ORDIN_JWT_ISSUER is required}
+  ORDIN_JWT_AUDIENCE: ${ORDIN_JWT_AUDIENCE:?ORDIN_JWT_AUDIENCE is required}
+  ORDIN_JWT_SECRET: ${ORDIN_JWT_SECRET:?ORDIN_JWT_SECRET is required}
+  ORDIN_IDENTITY_HMAC_SECRET: ${ORDIN_IDENTITY_HMAC_SECRET:?ORDIN_IDENTITY_HMAC_SECRET is required}
+  ORDIN_OTP_HMAC_SECRET: ${ORDIN_OTP_HMAC_SECRET:?ORDIN_OTP_HMAC_SECRET is required}
+  ORDIN_TOKEN_HMAC_SECRET: ${ORDIN_TOKEN_HMAC_SECRET:?ORDIN_TOKEN_HMAC_SECRET is required}
+  ORDIN_IDEMPOTENCY_HMAC_SECRET: ${ORDIN_IDEMPOTENCY_HMAC_SECRET:?ORDIN_IDEMPOTENCY_HMAC_SECRET is required}
+  ORDIN_OTP_SENDER_BACKEND: webhook
+  ORDIN_OTP_WEBHOOK_URL: ${ORDIN_OTP_WEBHOOK_URL:?ORDIN_OTP_WEBHOOK_URL is required}
+  ORDIN_OTP_WEBHOOK_TOKEN: ${ORDIN_OTP_WEBHOOK_TOKEN:?ORDIN_OTP_WEBHOOK_TOKEN is required}
+  ORDIN_RECOGNITION_PROVIDER_BACKEND: http
+  ORDIN_RECOGNITION_PROVIDER_URL: ${ORDIN_RECOGNITION_PROVIDER_URL:?ORDIN_RECOGNITION_PROVIDER_URL is required}
+  ORDIN_RECOGNITION_PROVIDER_TOKEN: ${ORDIN_RECOGNITION_PROVIDER_TOKEN:?ORDIN_RECOGNITION_PROVIDER_TOKEN is required}
+  ORDIN_RECOGNITION_PROVIDER_NAME: ${ORDIN_RECOGNITION_PROVIDER_NAME:?ORDIN_RECOGNITION_PROVIDER_NAME is required}
+  ORDIN_RECOGNITION_SOURCE_RETENTION_SECONDS: ${ORDIN_RECOGNITION_SOURCE_RETENTION_SECONDS:-86400}
+  ORDIN_FORWARDED_ALLOW_IPS: ${ORDIN_FORWARDED_ALLOW_IPS:?ORDIN_FORWARDED_ALLOW_IPS is required}
+
+x-runtime: &runtime
+  image: ${ORDIN_IMAGE_REPOSITORY:?ORDIN_IMAGE_REPOSITORY is required}@sha256:${ORDIN_IMAGE_SHA256:?ORDIN_IMAGE_SHA256 is required}
+  pull_policy: always
+  user: "100:101"
+  read_only: true
+  init: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777
+  pids_limit: 256
+  environment: *backend-environment
+  networks:
+    - backend
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+
+x-service-restart: &service-restart
+  restart: unless-stopped
+
+services:
+  migrate:
+    <<: *runtime
+    profiles:
+      - tools
+    command:
+      - alembic
+      - upgrade
+      - head
+    environment:
+      ORDIN_DATABASE_URL: ${ORDIN_MIGRATION_DATABASE_URL:?ORDIN_MIGRATION_DATABASE_URL is required}
+    restart: "no"
+    stop_grace_period: 30s
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+          pids: 256
+
+  api:
+    <<: [*runtime, *service-restart]
+    command:
+      - ordin-api
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    expose:
+      - "8000"
+    networks:
+      backend: {}
+      edge:
+        aliases:
+          - ordin-api
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/ready', timeout=3)
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+    stop_grace_period: 30s
+    deploy:
+      replicas: ${ORDIN_API_REPLICAS:-2}
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: ${ORDIN_API_CPU_LIMIT:-1.0}
+          memory: ${ORDIN_API_MEMORY_LIMIT:-768M}
+          pids: 256
+        reservations:
+          cpus: ${ORDIN_API_CPU_RESERVATION:-0.25}
+          memory: ${ORDIN_API_MEMORY_RESERVATION:-256M}
+
+  worker:
+    <<: [*runtime, *service-restart]
+    command:
+      - celery
+      - -A
+      - ordin.worker.celery_app:app
+      - worker
+      - --loglevel=INFO
+      - --queues=recognition,maintenance
+      - --hostname=celery@%h
+      - --concurrency=${ORDIN_WORKER_CONCURRENCY:-2}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - celery -A ordin.worker.celery_app:app inspect ping --destination "celery@$${HOSTNAME}" --timeout 5 | grep -q pong
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 90s
+    deploy:
+      replicas: ${ORDIN_WORKER_REPLICAS:-2}
+      update_config:
+        parallelism: 1
+        delay: 15s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: ${ORDIN_WORKER_CPU_LIMIT:-1.5}
+          memory: ${ORDIN_WORKER_MEMORY_LIMIT:-1G}
+          pids: 256
+        reservations:
+          cpus: ${ORDIN_WORKER_CPU_RESERVATION:-0.25}
+          memory: ${ORDIN_WORKER_MEMORY_RESERVATION:-256M}
+
+  beat:
+    <<: [*runtime, *service-restart]
+    command:
+      - celery
+      - -A
+      - ordin.worker.celery_app:app
+      - beat
+      - --loglevel=INFO
+      - --pidfile=/tmp/celerybeat.pid
+      - --schedule=/tmp/celerybeat-schedule
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - test -s /tmp/celerybeat.pid && kill -0 "$$(cat /tmp/celerybeat.pid)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 30s
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
+          pids: 256
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+networks:
+  backend:
+    driver: bridge
+  edge:
+    external: true
+    name: ${ORDIN_EDGE_NETWORK:?ORDIN_EDGE_NETWORK must be an existing reverse-proxy network}

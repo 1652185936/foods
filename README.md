@@ -1,93 +1,99 @@
-# 饮食生活助手
+# Ordin 好好吃饭
 
-一个移动端优先的饮食生活 App，当前处于 Phase 1 开发迭代。仓库采用 Flutter 原生客户端与 Python/FastAPI 服务端的 monorepo 结构，首发目标为 iOS 和 Android，并保留 Windows、macOS 工程。
+好好吃饭（技术标识 Ordin）是一个移动端优先、同时保留 Windows 与 macOS 工程的饮食生活应用。当前仓库包含可运行的 Flutter 客户端、FastAPI 业务服务、异步图片识别链路，以及面向生产环境的容器部署基线。
+
+## 技术架构
+
+- 客户端：Flutter `3.44.4`、Riverpod、Drift、SQLCipher、Dio 和由 OpenAPI 生成的类型安全 SDK。
+- 账号与本地数据：手机号 OTP 登录、平台安全存储、按账号隔离的加密数据库、本地优先写入、Outbox 幂等同步和冲突处理。
+- 服务端：Python `3.14`、FastAPI、SQLAlchemy、Alembic、PostgreSQL、Redis 和 Celery。
+- 图片识别：S3 兼容对象存储；本地使用 MinIO；Celery Worker 负责图片校验、去除元数据、调用识别供应商、重试和过期对象清理。
+- 发布：Android、iOS、Windows、macOS 构建检查，服务端非 root 容器，以及使用外部 PostgreSQL、Redis、S3 和反向代理网络的生产 Compose。
 
 ## 仓库结构
 
 ```text
 apps/client/          Flutter 客户端
-server/               FastAPI 服务端
-contracts/openapi/    已提交的 OpenAPI 契约
-assets/app/           原型阶段的视觉素材源文件
+server/               FastAPI API、迁移和 Celery Worker
+contracts/openapi/    提交到仓库的 OpenAPI 契约
+deploy/               生产 Compose 与无凭据环境变量模板
+docs/                 运维、验证和发布门禁文档
+assets/app/           应用内图片素材
+assets/brand/         品牌源图与平台图标生成脚本
 ```
 
-产品需求和架构决策分别见：
+产品与架构文档：
 
-- [`饮食生活App_需求设计文档PRD.md`](./饮食生活App_需求设计文档PRD.md)
-- [`饮食生活App_系统架构与技术选型.md`](./饮食生活App_系统架构与技术选型.md)
+- [产品需求设计](./饮食生活App_需求设计文档PRD.md)
+- [系统架构与技术选型](./饮食生活App_系统架构与技术选型.md)
+- [发布门禁](./docs/RELEASE_READINESS.md)
+- [生产运维](./docs/OPERATIONS.md)
 
-## 当前已实现
+## 已实现能力
 
-- Flutter 自适应应用骨架：手机使用底部导航，较宽窗口使用侧边导航。
-- “吃什么”“记录”“断食”“我的”四个可进入的一级页面。
-- 本地菜品随机选择、居家推荐与菜谱详情演示。
-- 饮食记录概览和拍照识别结果交互演示。
-- 14:10、16:8、18:6 断食方案与基于起止时间计算的计时状态。
-- FastAPI 应用骨架、`GET /api/v1/health` 健康检查及已提交的 OpenAPI 契约。
-- Flutter 与 Python 的格式、静态检查、测试和契约检查 CI。
+- “吃什么”“记录”“断食”“我的”四个一级入口，以及适配手机和宽窗口的导航布局。
+- 手机号 OTP 登录、Access Token 自动刷新、Refresh Token 轮换、严格受限的离线冷启动与退出登录。
+- SQLCipher 加密的餐食、断食和偏好数据；断网时继续使用，恢复网络后自动同步。
+- 餐食手动记录、每日汇总、14:10/16:8/18:6 断食计划、跨日和时区恢复。
+- 相机/相册选择、直传、异步识别轮询、低置信度复核、人工修正、手工降级和源图持久化清理的完整链路。
+- 账号数据 JSON 导出、确认短语注销、远端数据和对象删除，以及本机数据库、凭据与通知清理。
+- PostgreSQL 持久化、Redis OTP/限流与队列、Celery Worker/Beat、MinIO 本地对象存储。
+- 生产配置失败即关闭、不可变服务端镜像、受限容器运行参数、迁移和回滚操作手册。
 
-## 当前边界
+尚未完成的发布条件不伪装成工程决策；签名证书、商店主体、生产域名与供应商账号等外部输入集中列在[发布门禁](./docs/RELEASE_READINESS.md)。
 
-- 拍照识别仍是使用内置图片和延时状态的交互演示，尚未调用相机、相册、对象存储或 AI 服务。
-- 客户端状态目前保存在内存中；尚未接入 Drift/SQLite、加密持久化、离线同步或账号系统，重启 App 后状态会重置。
-- 服务端当前只有最小健康检查；PostgreSQL、Redis、Celery、识别任务、认证和业务 API 尚未实现。
-- 客户端尚未接入生成的 Dart API SDK，也未配置商店签名、推送和生产环境发布流程。
-- 好友互勉属于后续迭代，不在当前四入口版本中。
+## 本地启动
 
-## 本地运行
+### 完整后端
 
-从仓库根目录可通过 Melos 执行统一检查：
+需要 Docker Desktop。仓库根目录执行：
 
 ```powershell
-dart pub get --enforce-lockfile
-dart run melos run client:check
-dart run melos run server:check
+docker compose --profile backend up --build -d
+docker compose ps
 ```
 
-### 客户端
+默认端点：
 
-需要 Flutter `3.44.4` 及对应 Dart SDK。进入客户端目录后执行：
+- API：`http://127.0.0.1:8000`
+- 健康检查：`http://127.0.0.1:8000/api/v1/health`
+- 就绪检查：`http://127.0.0.1:8000/api/v1/ready`
+- OpenAPI：`http://127.0.0.1:8000/docs`
+- MinIO 控制台：`http://127.0.0.1:9001`
+
+停止服务：
+
+```powershell
+docker compose --profile backend down
+```
+
+开发环境数据保存在具名卷中；不要使用 `-v`，除非确实要删除本地数据库和对象。
+
+### Flutter 客户端
+
+需要 Flutter `3.44.4`。完整的调试、Android 端口反向代理、发布参数和签名说明见[客户端 README](./apps/client/README.md)。最短启动命令：
 
 ```powershell
 cd apps/client
 flutter pub get --enforce-lockfile
-flutter devices
-flutter run -d <device-id>
+flutter run -d <device-id> --dart-define=ORDIN_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-运行客户端质量检查：
+Android 模拟器或 USB 真机需先执行 `adb reverse tcp:8000 tcp:8000`。
+
+## 质量检查
+
+从仓库根目录恢复工作区依赖并执行检查：
 
 ```powershell
-dart format --output=none --set-exit-if-changed .
-flutter analyze
-flutter test
+dart pub get --enforce-lockfile
+dart run melos run client:check
+dart run melos run api:check
+dart run melos run server:check
 ```
 
-### 服务端
+服务端外部集成测试还需要 PostgreSQL、Redis 和 MinIO；CI 已创建这些依赖并在迁移后执行测试。已执行的验证及尚未覆盖的验证见[验证记录](./docs/VERIFICATION.md)。
 
-需要 CPython `3.14` 和 uv `0.11.29`。进入服务端目录后执行：
+## 生产部署
 
-```powershell
-cd server
-uv python install 3.14
-uv sync --locked --all-groups
-uv run --locked uvicorn ordin.api.main:app --reload
-```
-
-开发服务默认提供：
-
-- 健康检查：`http://127.0.0.1:8000/api/v1/health`
-- OpenAPI 文档：`http://127.0.0.1:8000/docs`
-
-运行服务端质量检查：
-
-```powershell
-uv lock --check
-uv run --locked ruff format --check .
-uv run --locked ruff check .
-uv run --locked mypy src tests scripts
-uv run --locked pytest
-uv run --locked python scripts/export_openapi.py --check
-```
-
-`export_openapi.py --check` 只校验应用生成的 OpenAPI 是否与 `contracts/openapi/ordin-api-v1.json` 一致，不会改写契约文件。
+`deploy/compose.production.yml` 只消费预构建且以 digest 固定的服务端镜像，并要求外部 TLS 入口、PostgreSQL、Redis 和 S3。它不会创建生产基础设施，也不包含任何真实凭据。部署、备份恢复、迁移、回滚和密钥轮换步骤见[运维手册](./docs/OPERATIONS.md)。

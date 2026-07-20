@@ -8,11 +8,14 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from ordin.infrastructure.config import Settings
+from ordin.infrastructure.database import account_models, recognition_models
 from ordin.infrastructure.database import models as database_models
 from ordin.infrastructure.database.base import Base
+from ordin.infrastructure.migration_config import MigrationSettings
 
 del database_models
+del account_models
+del recognition_models
 
 config = context.config
 if config.config_file_name is not None:
@@ -21,9 +24,13 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def get_database_url() -> str:
+    return MigrationSettings().database_url
+
+
 def run_migrations_offline() -> None:
     context.configure(
-        url=Settings().database_url,
+        url=get_database_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -45,7 +52,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = Settings().database_url
+    configuration["sqlalchemy.url"] = get_database_url()
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",

@@ -21,9 +21,9 @@
 | UI | Flutter Widgets + 设计令牌 | 跟随 Flutter stable | 不引入重量级 UI 套件，移动端和 PC 端分别布局，共享组件与视觉令牌 |
 | 自适应布局 | `LayoutBuilder` + `MediaQuery` + 平台导航组件 | Flutter SDK 内置 | 手机使用底部导航，PC 使用侧边栏和多栏布局，禁止简单等比拉伸手机页面 |
 | 状态与依赖注入 | Riverpod | 3.x | 异步状态、依赖注入、缓存和可测试业务状态 |
-| 网络 | Dio + OpenAPI 生成客户端 | 锁定安装时稳定版 | 统一拦截器、重试、Token 轮换和类型化 API |
-| 数据模型 | Freezed + `json_serializable` | 锁定安装时稳定版 | 不可变模型、联合状态和 JSON 序列化 |
-| 本地持久化 | Drift + SQLite + SQLCipher | 锁定安装时稳定版 | Android、iOS、Windows、macOS 共用离线模型、迁移与同步队列 |
+| 网络 | Dio + Retrofit + `swagger_parser` | Dio 5.10.0 / Retrofit 4.9.2 / `swagger_parser` 1.44.0 | 从已提交 OpenAPI 生成类型化客户端；项目内 wrapper 负责契约门禁、全量 build_runner、漂移检测、单飞 Token 轮换和 Problem Details 映射 |
+| 数据模型 | Dart 不可变领域模型 + `json_serializable` | `json_serializable 6.14.0` | 领域对象保持手写、可审计；OpenAPI DTO 由生成器输出 JSON 序列化代码，不引入未实际使用的 Freezed 构建链 |
+| 本地持久化 | Drift + `sqlite3` 3.x + SQLCipher build hook | `sqlite3 >=3.3.3,<4`，锁定具体补丁版 | 由 `sqlite3` build hook 为 Android、iOS、Windows、macOS 选择 SQLCipher 构建；共用离线模型、迁移与同步队列，不再依赖已停止使用的 `sqlcipher_flutter_libs` |
 | 安全存储 | 平台安全存储适配器 | 锁定安装时稳定版 | 对接 Keychain、Keystore、Windows Credential Locker 等平台能力 |
 | 后端 | Python + `FastAPI[standard]` + Uvicorn | CPython 3.14.6 / FastAPI `>=0.139.2,<0.140` | 使用标准 GIL 构建的 ASGI 模块化单体；异步 I/O 处理业务 API，并与图像处理、模型评测和未来推理共用 Python 生态 |
 | API | REST + OpenAPI 3.x | `/api/v1` | 由后端生成 OpenAPI，再生成 Dart API 客户端 |
@@ -254,6 +254,26 @@ apps/client/
 - 用户资料采用乐观锁；冲突时以字段级最新时间合并，无法安全合并则提示用户。
 - 排行、好友状态和订阅权益始终以服务端为准。
 
+### 5.5 本地数据库加密实现与密钥边界
+
+`sqlite3` 3.x 使用 Dart/Flutter build hook 选择随应用打包的原生数据库构建。当前仓库是 Dart workspace，因此 SQLCipher 选择必须配置在工作区根 `pubspec.yaml`，而不是各平台工程中分别复制原生库：
+
+```yaml
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlcipher
+```
+
+工程约束：
+
+- 不新增 `sqlcipher_flutter_libs`；该包只服务于 `sqlite3` 2.x，升级到 `sqlite3` 3.x 后由 build hook 负责原生库。
+- CI 必须在 Android、iOS、Windows、macOS 分别构建并验证实际加载的是 SQLCipher，而不是未加密的系统 SQLite；数据库测试应验证正确密钥可打开、错误密钥失败、应用升级后仍可读取旧数据。
+- 数据库密钥必须是高熵随机值，只能通过平台安全存储适配器进入 Keychain、Keystore 或 Windows Credential Locker；不得写入 Dart 源码、环境文件、普通偏好、SQLite 表、日志、崩溃上报或构建产物。
+- 丢失平台安全存储中的密钥会导致本地数据库不可恢复；密钥轮换、重装恢复、备份排除和服务端重新同步策略必须在发布前演练，不能用固定常量或可预测用户字段规避该风险。
+- SQLCipher 保护的是静态数据库文件，不能防御已解锁设备上的恶意进程、越狱/Root 环境或运行时内存读取；敏感数据仍需最小化、日志脱敏和服务端权限控制。
+- SQLCipher 与其链接的加密库有独立许可证和平台差异，发布包必须完成许可证清单、NOTICE 和四端真机/安装包验证。
+
 ---
 
 ## 6. 后端模块边界
@@ -447,7 +467,7 @@ ordin/
 │  └─ runbooks/
 ├─ compose.yaml               # 仓库根入口；默认基础设施，backend profile 启动 API/Worker
 ├─ pubspec.yaml               # Dart workspace 根配置
-├─ melos.yaml                 # Dart/Flutter workspace
+├─ pubspec.yaml               # Dart workspace、Melos 脚本和 native build hook
 └─ README.md
 ```
 
@@ -544,7 +564,7 @@ Compose 命令统一从仓库根目录执行。Python 命令统一以 `server/` 
 
 - 用真实 Android 和 iPhone 完成相机、相册、图片压缩、签名直传验证。
 - 在 Windows 完成文件选择、拖放、窗口缩放和签名构建验证；macOS 至少完成 CI smoke build。
-- 验证 Drift + SQLCipher 在 Android、iOS、Windows、macOS 的迁移兼容，以及应用重启后的断食计时和本地通知。
+- 验证 Drift + `sqlite3` 3.x SQLCipher build hook 在 Android、iOS、Windows、macOS 的构建、密钥、迁移兼容，以及应用重启后的断食计时和本地通知。
 - 使用 CPython 3.14.6 标准 GIL 构建完成 FastAPI、SQLAlchemy、Celery/Redis API 到 Worker 的集成测试，不启用 `3.14t`。
 - 用 30–50 张菜品图片跑第一轮 AI 供应商延迟和准确率对比。
 - 确定部署地区、短信供应商、营养数据源授权和原图保留策略。
@@ -620,7 +640,8 @@ V1.5 再增加好友、动态、排行榜、组队、购物清单和服务端推
 - [`go_router`](https://pub.dev/packages/go_router)：Flutter 官方发布的跨平台声明式路由包。
 - [Riverpod](https://riverpod.dev/)：客户端状态、异步数据和依赖注入方案。
 - [Drift 平台支持](https://drift.simonbinder.eu/platforms/)：Android、iOS、Windows、Linux、macOS SQLite 支持。
-- [SQLCipher Flutter Libraries](https://pub.dev/packages/sqlcipher_flutter_libs)：Android、iOS、Windows、macOS、Linux 原生 SQLCipher 库。
+- [`sqlite3` 3.x build hook 配置](https://pub.dev/documentation/sqlite3/latest/topics/hook-topic.html)：通过 workspace 根 `hooks.user_defines` 选择 `sqlcipher` 构建，并说明平台二进制、许可证和自定义链接边界。
+- [`sqlite3` 3.x 变更记录](https://pub.dev/packages/sqlite3/changelog)：3.0 起改用 build hooks 并要求移除旧原生库依赖；3.3.3 恢复 SQLCipher 支持，因此项目最低基线为 3.3.3。
 - [React Native Windows](https://microsoft.github.io/react-native-windows/)：React Native 同样可以生成原生 Windows App，并非 Web 技术。
 - [React Native Windows 支持策略](https://microsoft.github.io/react-native-windows/support/)：桌面端版本支持周期和当前版本基线。
 - [React Native Windows 社区模块说明](https://microsoft.github.io/react-native-windows/docs/supported-community-modules/)：原生模块需要单独提供 Windows/macOS 实现。

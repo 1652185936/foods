@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:foods_client/app/foods_app.dart';
 import 'package:foods_client/app/router/app_router.dart';
+
+import 'support/test_dependencies.dart';
 
 void main() {
   testWidgets('fasting page has no errors at 320x700 and 200% text', (
@@ -73,7 +74,7 @@ Future<void> _withAccessibilityApp(
 
   try {
     await tester.pumpWidget(
-      ProviderScope(child: FoodsApp(routerConfig: router)),
+      testProviderScope(child: FoodsApp(routerConfig: router)),
     );
     await tester.pumpAndSettle();
     await body(router);

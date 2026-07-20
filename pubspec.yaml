@@ -7,8 +7,13 @@ environment:
 workspace:
   - apps/client
 
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlcipher
+
 dev_dependencies:
-  melos: ^8.2.2
+  melos: 7.8.1
 
 melos:
   scripts:
@@ -42,6 +47,14 @@ melos:
         - client:format:check
         - client:analyze
         - client:test
+
+    api:generate:
+      description: Regenerate the checked-in Dart API client.
+      run: dart run apps/client/tool/generate_api_client.dart
+
+    api:check:
+      description: Verify the checked-in Dart API client is current.
+      run: dart run apps/client/tool/generate_api_client.dart --check
 
     server:format:
       description: Verify Python server formatting.

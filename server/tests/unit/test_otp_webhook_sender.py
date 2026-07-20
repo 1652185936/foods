@@ -39,6 +39,12 @@ async def test_webhook_sender_uses_authenticated_structured_request() -> None:
 async def test_production_container_assembles_webhook_delivery_path() -> None:
     settings = Settings(
         environment="production",
+        public_api_origin=AnyHttpUrl("https://api.example.com"),
+        database_url=(
+            "postgresql+psycopg://ordin_app:database-password-0001@db.example.com/ordin"
+            "?sslmode=verify-full"
+        ),
+        redis_url="rediss://:cache-password-0001@cache.example.com:6379/0",
         jwt_secret=SecretStr("j" * 32),
         identity_hmac_secret=SecretStr("i" * 32),
         otp_hmac_secret=SecretStr("o" * 32),
@@ -48,6 +54,16 @@ async def test_production_container_assembles_webhook_delivery_path() -> None:
         development_otp_code=None,
         otp_webhook_url=AnyHttpUrl("https://sms.example/send"),
         otp_webhook_token=SecretStr("w" * 32),
+        recognition_provider_backend="http",
+        recognition_provider_url=AnyHttpUrl("https://recognition.example/analyze"),
+        recognition_provider_token=SecretStr("r" * 32),
+        s3_endpoint_url=AnyHttpUrl("https://s3.internal.example"),
+        s3_public_endpoint_url=AnyHttpUrl("https://uploads.example"),
+        s3_access_key_id=SecretStr("production-access-key"),
+        s3_secret_access_key=SecretStr("s" * 32),
+        celery_broker_url=(
+            "rediss://:broker-password-0001@broker.example.com:6379/0?ssl_cert_reqs=required"
+        ),
     )
     container = build_default_container(settings)
     try:

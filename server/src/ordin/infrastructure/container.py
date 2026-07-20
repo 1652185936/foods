@@ -8,12 +8,24 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from ordin.core.clock import Clock, SystemClock
 from ordin.core.security import HmacDigester
+from ordin.infrastructure.account_memory import InMemoryAccountRepository
 from ordin.infrastructure.auth.tokens import TokenService
+from ordin.infrastructure.celery_dispatcher import CeleryRecognitionDispatcher
 from ordin.infrastructure.config import Settings
+from ordin.infrastructure.database.account_repository import SqlAlchemyAccountRepository
+from ordin.infrastructure.database.recognition_repository import SqlAlchemyRecognitionRepository
+from ordin.infrastructure.database.records_repository import SqlAlchemyRecordsRepository
 from ordin.infrastructure.database.repository import SqlAlchemyApplicationRepository
+from ordin.infrastructure.image_processing import PillowImageProcessor
+from ordin.infrastructure.memory import InMemoryApplicationRepository
+from ordin.infrastructure.object_storage.s3 import S3ObjectStorage, build_s3_client
 from ordin.infrastructure.otp.webhook_sender import WebhookOtpSender
+from ordin.infrastructure.recognition_memory import InMemoryRecognitionRepository
+from ordin.infrastructure.records_memory import InMemoryRecordsRepository
 from ordin.infrastructure.redis.otp_store import RedisOtpChallengeStore
 from ordin.infrastructure.redis.rate_limiter import RedisRateLimiter
+from ordin.modules.accounts.ports import AccountRepository
+from ordin.modules.accounts.service import AccountsService
 from ordin.modules.auth.otp import (
     DevelopmentOtpSender,
     FixedOtpCodeGenerator,
@@ -27,6 +39,15 @@ from ordin.modules.ports import (
     OtpSender,
     RateLimiter,
 )
+from ordin.modules.recognition.ports import (
+    ImageProcessor,
+    ObjectStorage,
+    RecognitionRepository,
+    RecognitionTaskDispatcher,
+)
+from ordin.modules.recognition.service import RecognitionService
+from ordin.modules.records.ports import RecordsRepository
+from ordin.modules.records.service import RecordsService
 from ordin.modules.users.service import UsersService
 
 
@@ -38,12 +59,16 @@ async def _noop_close() -> None:
 class AppContainer:
     settings: Settings
     repository: ApplicationRepository
+    records_repository: RecordsRepository
     otp_store: OtpChallengeStore
     rate_limiter: RateLimiter
     clock: Clock
     token_service: TokenService
     auth_service: AuthService
     users_service: UsersService
+    accounts_service: AccountsService
+    records_service: RecordsService
+    recognition_service: RecognitionService
     _close_callback: Callable[[], Awaitable[None]] = _noop_close
 
     async def ready(self) -> bool:
@@ -52,6 +77,7 @@ class AppContainer:
                 self.repository.ping(),
                 self.otp_store.ping(),
                 self.rate_limiter.ping(),
+                self.recognition_service.ready(),
             )
         except Exception:
             return False
@@ -65,11 +91,17 @@ def assemble_container(
     *,
     settings: Settings,
     repository: ApplicationRepository,
+    records_repository: RecordsRepository,
+    recognition_repository: RecognitionRepository,
+    recognition_storage: ObjectStorage,
+    recognition_dispatcher: RecognitionTaskDispatcher,
+    account_repository: AccountRepository | None = None,
     otp_store: OtpChallengeStore,
     rate_limiter: RateLimiter,
     otp_sender: OtpSender,
     otp_code_generator: OtpCodeGenerator,
     clock: Clock | None = None,
+    image_processor: ImageProcessor | None = None,
     close_callback: Callable[[], Awaitable[None]] = _noop_close,
 ) -> AppContainer:
     resolved_clock = clock or SystemClock()
@@ -99,15 +131,50 @@ def assemble_container(
         otp_ip_limit=settings.otp_ip_limit,
         otp_rate_window_seconds=settings.otp_rate_window_seconds,
     )
+    recognition_service = RecognitionService(
+        repository=recognition_repository,
+        storage=recognition_storage,
+        image_processor=image_processor or PillowImageProcessor(),
+        dispatcher=recognition_dispatcher,
+        clock=resolved_clock,
+        idempotency_digester=HmacDigester(settings.idempotency_hmac_secret.get_secret_value()),
+        upload_ttl_seconds=settings.recognition_upload_ttl_seconds,
+        source_retention_seconds=settings.recognition_source_retention_seconds,
+        max_image_bytes=settings.recognition_max_image_bytes,
+        max_image_pixels=settings.recognition_max_image_pixels,
+    )
+    if account_repository is None:
+        if not isinstance(repository, InMemoryApplicationRepository):
+            raise TypeError("account_repository is required for non-memory application storage")
+        if not isinstance(records_repository, InMemoryRecordsRepository):
+            raise TypeError("account_repository is required for non-memory records storage")
+        if not isinstance(recognition_repository, InMemoryRecognitionRepository):
+            raise TypeError("account_repository is required for non-memory recognition storage")
+        account_repository = InMemoryAccountRepository(
+            application=repository,
+            records=records_repository,
+            recognition=recognition_repository,
+        )
+    accounts_service = AccountsService(
+        repository=account_repository,
+        storage=recognition_storage,
+        token_service=token_service,
+        clock=resolved_clock,
+        export_max_records=settings.account_export_max_records,
+    )
     return AppContainer(
         settings=settings,
         repository=repository,
+        records_repository=records_repository,
         otp_store=otp_store,
         rate_limiter=rate_limiter,
         clock=resolved_clock,
         token_service=token_service,
         auth_service=auth_service,
         users_service=UsersService(repository=repository, clock=resolved_clock),
+        accounts_service=accounts_service,
+        records_service=RecordsService(repository=records_repository, clock=resolved_clock),
+        recognition_service=recognition_service,
         _close_callback=close_callback,
     )
 
@@ -119,7 +186,25 @@ def build_default_container(settings: Settings) -> AppContainer:
         hide_parameters=True,
     )
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    application_repository = SqlAlchemyApplicationRepository(session_factory)
+    records_repository = SqlAlchemyRecordsRepository(session_factory)
+    recognition_repository = SqlAlchemyRecognitionRepository(session_factory)
+    account_repository = SqlAlchemyAccountRepository(session_factory)
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    s3_client = build_s3_client(
+        endpoint_url=str(settings.s3_endpoint_url),
+        region=settings.s3_region,
+        access_key_id=settings.s3_access_key_id.get_secret_value(),
+        secret_access_key=settings.s3_secret_access_key.get_secret_value(),
+        force_path_style=settings.s3_force_path_style,
+    )
+    s3_presign_client = build_s3_client(
+        endpoint_url=str(settings.s3_public_endpoint_url),
+        region=settings.s3_region,
+        access_key_id=settings.s3_access_key_id.get_secret_value(),
+        secret_access_key=settings.s3_secret_access_key.get_secret_value(),
+        force_path_style=settings.s3_force_path_style,
+    )
 
     otp_http_client: AsyncClient | None = None
     if settings.otp_sender_backend == "development":
@@ -150,11 +235,22 @@ def build_default_container(settings: Settings) -> AppContainer:
         if otp_http_client is not None:
             await otp_http_client.aclose()
         await redis.aclose()
+        s3_client.close()
+        s3_presign_client.close()
         await engine.dispose()
 
     return assemble_container(
         settings=settings,
-        repository=SqlAlchemyApplicationRepository(session_factory),
+        repository=application_repository,
+        records_repository=records_repository,
+        recognition_repository=recognition_repository,
+        account_repository=account_repository,
+        recognition_storage=S3ObjectStorage(
+            s3_client,
+            bucket=settings.s3_bucket,
+            presign_client=s3_presign_client,
+        ),
+        recognition_dispatcher=CeleryRecognitionDispatcher(broker_url=settings.celery_broker_url),
         otp_store=RedisOtpChallengeStore(redis),
         rate_limiter=RedisRateLimiter(redis),
         otp_sender=otp_sender,

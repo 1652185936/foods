@@ -15,6 +15,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  secret-scan:
+    name: Repository secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install checksum-verified Gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=gitleaks_8.30.1_linux_x64.tar.gz
+          curl --fail --location --silent --show-error \
+            --output "$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/$archive"
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $archive" \
+            | sha256sum --check --strict
+          tar --extract --gzip --file "$archive" gitleaks
+
+      - name: Scan committed history
+        run: ./gitleaks git --redact --no-banner --verbose .
+
   client:
     name: Flutter client
     runs-on: ubuntu-latest
@@ -25,10 +51,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2.23.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           flutter-version: 3.44.4
@@ -36,6 +64,9 @@ jobs:
 
       - name: Restore locked dependencies
         run: flutter pub get --enforce-lockfile
+
+      - name: Check generated API client
+        run: dart run tool/generate_api_client.dart --check
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -53,13 +84,51 @@ jobs:
     defaults:
       run:
         working-directory: server
+    env:
+      ORDIN_DATABASE_URL: postgresql+psycopg://ordin:ordin@127.0.0.1:5432/ordin_test
+      ORDIN_TEST_DATABASE_URL: postgresql+psycopg://ordin:ordin@127.0.0.1:5432/ordin_test
+      ORDIN_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+      ORDIN_TEST_CELERY_BROKER_URL: redis://127.0.0.1:6379/14
+      ORDIN_CELERY_BROKER_URL: redis://127.0.0.1:6379/14
+      ORDIN_RUN_EXTERNAL_TESTS: "1"
+      ORDIN_RUN_RECOGNITION_EXTERNAL_TESTS: "1"
+      ORDIN_S3_ENDPOINT_URL: http://127.0.0.1:9000
+      ORDIN_S3_PUBLIC_ENDPOINT_URL: http://127.0.0.1:9000
+      ORDIN_S3_BUCKET: ordin-private
+      ORDIN_S3_ACCESS_KEY_ID: minioadmin
+      ORDIN_S3_SECRET_ACCESS_KEY: minioadmin
+    services:
+      postgres:
+        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+        env:
+          POSTGRES_DB: ordin_test
+          POSTGRES_USER: ordin
+          POSTGRES_PASSWORD: ordin
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ordin -d ordin_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:7.4-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.14"
 
@@ -77,6 +146,29 @@ jobs:
       - name: Sync locked dependencies
         run: uv sync --locked --all-groups
 
+      - name: Start private object storage
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker run --detach --name ordin-minio-ci \
+            --publish 127.0.0.1:9000:9000 \
+            --env MINIO_ROOT_USER=minioadmin \
+            --env MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e \
+            server /data
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/live > /dev/null; then
+              break
+            fi
+            if [ "$attempt" = 30 ]; then
+              docker logs ordin-minio-ci
+              exit 1
+            fi
+            sleep 2
+          done
+          docker run --rm --network host --entrypoint /bin/sh \
+            minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727 \
+            -ec 'mc alias set ordin http://127.0.0.1:9000 minioadmin minioadmin && mc mb --ignore-existing ordin/ordin-private'
+
       - name: Check formatting
         run: uv run --locked ruff format --check .
 
@@ -85,6 +177,14 @@ jobs:
 
       - name: Type check
         run: uv run --locked mypy src tests scripts
+
+      - name: Verify reversible empty-database migrations
+        run: |
+          uv run --locked alembic upgrade head
+          uv run --locked alembic check
+          uv run --locked alembic downgrade base
+          uv run --locked alembic upgrade head
+          uv run --locked alembic check
 
       - name: Test
         run: uv run --locked pytest

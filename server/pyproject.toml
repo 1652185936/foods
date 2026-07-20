@@ -6,17 +6,21 @@ readme = "README.md"
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "alembic>=1.18.5,<1.19",
+    "boto3>=1.42,<2",
+    "celery[redis]>=5.6.3,<5.7",
     "fastapi[standard]>=0.139,<0.140",
     "httpx>=0.28,<1",
+    "pillow>=12.1,<13",
     "psycopg[binary]>=3.3,<4",
     "pydantic-settings>=2.12,<3",
     "pyjwt>=2.10,<3",
-    "redis>=7,<8",
+    "redis>=6.4,<6.5",
     "sqlalchemy[asyncio]>=2.0.51,<2.1",
 ]
 
 [dependency-groups]
 dev = [
+    "boto3-stubs[s3]>=1.42,<2",
     "mypy>=1.18,<2",
     "pytest>=9,<10",
     "pytest-asyncio>=1.3,<2",
@@ -41,6 +45,7 @@ addopts = "-ra"
 asyncio_mode = "auto"
 markers = [
     "external: requires the Docker PostgreSQL and Redis development dependencies",
+    "recognition_external: requires PostgreSQL, Redis, and MinIO",
 ]
 testpaths = ["tests"]
 

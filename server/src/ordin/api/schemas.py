@@ -2,13 +2,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ordin.modules.auth.models import ClientPlatform, TokenPair
 from ordin.modules.users.models import GoalType, HealthProfile, HealthProfileInput, User
 
 _HEIGHT_PATTERN = r"^(?:0\.(?:0[1-9]|[1-9][0-9]?)|[1-9][0-9]{0,2}(?:\.[0-9]{1,2})?)$"
 _WEIGHT_PATTERN = r"^(?:0\.(?:0[1-9]|[1-9][0-9]?)|[1-9][0-9]{0,3}(?:\.[0-9]{1,2})?)$"
+_LOCAL_DAY_PATTERN = r"^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"
 
 
 def _decimal_or_none(value: str | None) -> Decimal | None:
@@ -17,6 +18,15 @@ def _decimal_or_none(value: str | None) -> Decimal | None:
 
 def _decimal_string(value: Decimal | None) -> str | None:
     return format(value, "f") if value is not None else None
+
+
+def _date_or_none(value: str | None) -> date | None:
+    if value is None:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as error:
+        raise ValueError("date must be a calendar date") from error
 
 
 def _to_camel(value: str) -> str:
@@ -125,15 +135,21 @@ class UserPatchInput(ApiModel):
 
 class HealthProfileInputModel(ApiModel):
     expected_version: int = Field(ge=0)
-    birth_date: date | None = None
+    birth_date: str | None = Field(default=None, pattern=_LOCAL_DAY_PATTERN)
     height_cm: str | None = Field(default=None, pattern=_HEIGHT_PATTERN)
     current_weight_kg: str | None = Field(default=None, pattern=_WEIGHT_PATTERN)
     target_weight_kg: str | None = Field(default=None, pattern=_WEIGHT_PATTERN)
     goal_type: GoalType | None = None
 
+    @field_validator("birth_date")
+    @classmethod
+    def validate_birth_date(cls, value: str | None) -> str | None:
+        _date_or_none(value)
+        return value
+
     def to_domain(self) -> HealthProfileInput:
         return HealthProfileInput(
-            birth_date=self.birth_date,
+            birth_date=_date_or_none(self.birth_date),
             height_cm=_decimal_or_none(self.height_cm),
             current_weight_kg=_decimal_or_none(self.current_weight_kg),
             target_weight_kg=_decimal_or_none(self.target_weight_kg),
@@ -143,7 +159,7 @@ class HealthProfileInputModel(ApiModel):
 
 class HealthProfileResponse(ApiModel):
     user_id: UUID
-    birth_date: date | None
+    birth_date: str | None = Field(default=None, pattern=_LOCAL_DAY_PATTERN)
     height_cm: str | None
     current_weight_kg: str | None
     target_weight_kg: str | None
@@ -157,7 +173,7 @@ class HealthProfileResponse(ApiModel):
     def from_domain(cls, profile: HealthProfile) -> HealthProfileResponse:
         return cls(
             user_id=profile.user_id,
-            birth_date=profile.birth_date,
+            birth_date=profile.birth_date.isoformat() if profile.birth_date is not None else None,
             height_cm=_decimal_string(profile.height_cm),
             current_weight_kg=_decimal_string(profile.current_weight_kg),
             target_weight_kg=_decimal_string(profile.target_weight_kg),

@@ -17,6 +17,12 @@ from ordin.infrastructure.memory import (
     InMemoryOtpChallengeStore,
     InMemoryRateLimiter,
 )
+from ordin.infrastructure.object_storage.memory import InMemoryObjectStorage
+from ordin.infrastructure.recognition_memory import (
+    InMemoryRecognitionRepository,
+    RecordingRecognitionDispatcher,
+)
+from ordin.infrastructure.records_memory import InMemoryRecordsRepository
 from ordin.modules.auth.otp import FixedOtpCodeGenerator
 
 
@@ -75,6 +81,26 @@ def repository() -> InMemoryApplicationRepository:
 
 
 @pytest.fixture
+def records_repository() -> InMemoryRecordsRepository:
+    return InMemoryRecordsRepository()
+
+
+@pytest.fixture
+def recognition_repository() -> InMemoryRecognitionRepository:
+    return InMemoryRecognitionRepository()
+
+
+@pytest.fixture
+def recognition_storage() -> InMemoryObjectStorage:
+    return InMemoryObjectStorage()
+
+
+@pytest.fixture
+def recognition_dispatcher() -> RecordingRecognitionDispatcher:
+    return RecordingRecognitionDispatcher()
+
+
+@pytest.fixture
 def otp_store() -> InMemoryOtpChallengeStore:
     return InMemoryOtpChallengeStore()
 
@@ -90,12 +116,20 @@ def container(
     clock: MutableClock,
     otp_sender: RecordingOtpSender,
     repository: InMemoryApplicationRepository,
+    records_repository: InMemoryRecordsRepository,
+    recognition_repository: InMemoryRecognitionRepository,
+    recognition_storage: InMemoryObjectStorage,
+    recognition_dispatcher: RecordingRecognitionDispatcher,
     otp_store: InMemoryOtpChallengeStore,
     rate_limiter: InMemoryRateLimiter,
 ) -> AppContainer:
     return assemble_container(
         settings=settings,
         repository=repository,
+        records_repository=records_repository,
+        recognition_repository=recognition_repository,
+        recognition_storage=recognition_storage,
+        recognition_dispatcher=recognition_dispatcher,
         otp_store=otp_store,
         rate_limiter=rate_limiter,
         otp_sender=otp_sender,

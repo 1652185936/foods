@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:foods_client/app/foods_app.dart';
 import 'package:foods_client/app/router/app_router.dart';
+
+import 'support/test_dependencies.dart';
 
 void main() {
   testWidgets('mobile shell opens and safely dismisses recognition', (
@@ -20,7 +21,7 @@ void main() {
     addTearDown(router.dispose);
 
     await tester.pumpWidget(
-      ProviderScope(child: FoodsApp(routerConfig: router)),
+      testProviderScope(child: FoodsApp(routerConfig: router)),
     );
     await tester.pumpAndSettle();
 
@@ -67,7 +68,7 @@ void main() {
     addTearDown(router.dispose);
 
     await tester.pumpWidget(
-      ProviderScope(child: FoodsApp(routerConfig: router)),
+      testProviderScope(child: FoodsApp(routerConfig: router)),
     );
     await tester.pumpAndSettle();
 

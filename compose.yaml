@@ -1,8 +1,20 @@
 name: ordin
 
+x-backend-environment: &backend-environment
+  ORDIN_ENVIRONMENT: development
+  ORDIN_DEVELOPMENT_OTP_CODE: "123456"
+  ORDIN_DATABASE_URL: postgresql+psycopg://ordin:ordin@postgres:5432/ordin
+  ORDIN_REDIS_URL: redis://redis:6379/0
+  ORDIN_CELERY_BROKER_URL: redis://redis:6379/1
+  ORDIN_S3_ENDPOINT_URL: http://minio:9000
+  ORDIN_S3_PUBLIC_ENDPOINT_URL: http://127.0.0.1:9000
+  ORDIN_S3_ACCESS_KEY_ID: minioadmin
+  ORDIN_S3_SECRET_ACCESS_KEY: minioadmin
+  ORDIN_RECOGNITION_PROVIDER_BACKEND: development
+
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
     environment:
       POSTGRES_DB: ordin
       POSTGRES_USER: ordin
@@ -20,7 +32,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:7.4-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "127.0.0.1:6379:6379"
@@ -33,6 +45,123 @@ services:
       retries: 20
     restart: unless-stopped
 
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - ordin-minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set ordin http://minio:9000 minioadmin minioadmin
+        mc mb --ignore-existing ordin/ordin-private
+
+  migrate:
+    profiles: ["backend"]
+    build:
+      context: ./server
+    environment:
+      ORDIN_DATABASE_URL: postgresql+psycopg://ordin:ordin@postgres:5432/ordin
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    profiles: ["backend"]
+    build:
+      context: ./server
+    environment: *backend-environment
+    command:
+      - ordin-api
+      - --host
+      - 0.0.0.0
+      - --allow-insecure-development-host
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/ready', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  worker:
+    profiles: ["backend"]
+    build:
+      context: ./server
+    environment: *backend-environment
+    command:
+      - celery
+      - -A
+      - ordin.worker.celery_app:app
+      - worker
+      - --loglevel=INFO
+      - --queues=recognition,maintenance
+      - --hostname=celery@%h
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - celery -A ordin.worker.celery_app:app inspect ping --destination "celery@$${HOSTNAME}" --timeout 3 | grep -q pong
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  worker-beat:
+    profiles: ["backend"]
+    build:
+      context: ./server
+    environment: *backend-environment
+    command:
+      - celery
+      - -A
+      - ordin.worker.celery_app:app
+      - beat
+      - --loglevel=INFO
+    depends_on:
+      worker:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   ordin-postgres18-data:
   ordin-redis-data:
+  ordin-minio-data:

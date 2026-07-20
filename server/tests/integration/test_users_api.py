@@ -52,6 +52,7 @@ async def test_user_and_health_profile_versioned_flow(client: AsyncClient) -> No
     )
     assert created_profile.status_code == 200
     assert created_profile.json()["version"] == 1
+    assert created_profile.json()["birthDate"] == "1995-05-08"
     assert created_profile.json()["dailyEnergyTargetKcal"] is None
 
     numeric_wire_value = await client.put(
@@ -60,6 +61,13 @@ async def test_user_and_health_profile_versioned_flow(client: AsyncClient) -> No
         json={"expectedVersion": 1, "heightCm": 172.5},
     )
     assert numeric_wire_value.status_code == 422
+
+    invalid_birth_date = await client.put(
+        "/api/v1/users/me/health-profile",
+        headers=headers,
+        json={"expectedVersion": 1, "birthDate": "1995-02-31"},
+    )
+    assert invalid_birth_date.status_code == 422
 
     profile_conflict = await client.put(
         "/api/v1/users/me/health-profile",

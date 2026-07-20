@@ -1,0 +1,17 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'meal_list_response.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+MealListResponse _$MealListResponseFromJson(Map<String, dynamic> json) =>
+    MealListResponse(
+      items: (json['items'] as List<dynamic>)
+          .map((e) => MealResponse.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$MealListResponseToJson(MealListResponse instance) =>
+    <String, dynamic>{'items': instance.items};

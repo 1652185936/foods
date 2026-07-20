@@ -9,12 +9,18 @@ from starlette.exceptions import HTTPException as StarletteHttpException
 
 from ordin.api.schemas import FieldProblem, ProblemDetails
 from ordin.core.errors import (
+    AccountExportTooLargeError,
     ApplicationError,
+    IdempotencyConflictError,
     InvalidAuthenticationError,
+    InvalidImageError,
     InvalidOtpError,
+    InvalidRecognitionStateError,
+    InvalidSyncOperationError,
     RateLimitExceededError,
     ResourceNotFoundError,
     ServiceUnavailableError,
+    UploadStateConflictError,
     VersionConflictError,
 )
 from ordin.core.identifiers import new_uuid
@@ -56,11 +62,37 @@ async def _application_error_handler(request: Request, error: Exception) -> JSON
         status, title, detail = 404, "Resource not found", "The requested resource was not found."
     elif isinstance(error, VersionConflictError):
         status, title, detail = 409, "Version conflict", "Refresh the resource and retry."
+    elif isinstance(error, InvalidSyncOperationError):
+        status = 422
+        title = "Invalid sync operation"
+        detail = "The synchronization operation is inconsistent or unsupported."
     elif isinstance(error, ServiceUnavailableError):
         status, title, detail = (
             503,
             "Service unavailable",
             "The service is temporarily unavailable.",
+        )
+    elif isinstance(error, InvalidImageError):
+        status, title, detail = 422, "Invalid image", "The uploaded image could not be accepted."
+    elif isinstance(error, UploadStateConflictError):
+        status, title, detail = 409, "Upload state conflict", "The upload is not ready."
+    elif isinstance(error, IdempotencyConflictError):
+        status, title, detail = (
+            409,
+            "Idempotency conflict",
+            "The idempotency key was already used for a different request.",
+        )
+    elif isinstance(error, InvalidRecognitionStateError):
+        status, title, detail = (
+            409,
+            "Recognition state conflict",
+            "The recognition result cannot be edited in its current state.",
+        )
+    elif isinstance(error, AccountExportTooLargeError):
+        status, title, detail = (
+            413,
+            "Account export is too large",
+            "The account exceeds the synchronous export limit. Contact support for assistance.",
         )
     else:
         status, title, detail = 400, "Request failed", "The request could not be completed."

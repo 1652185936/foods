@@ -19,7 +19,7 @@ def test_openapi_contains_health_contract(app: FastAPI) -> None:
     }
 
 
-def test_openapi_contains_first_business_api_batch(app: FastAPI) -> None:
+def test_openapi_exposes_only_the_versioned_v1_surface(app: FastAPI) -> None:
     schema = app.openapi()
 
     assert set(schema["paths"]) == {
@@ -27,15 +27,37 @@ def test_openapi_contains_first_business_api_batch(app: FastAPI) -> None:
         "/api/v1/auth/otp/challenges/{challengeId}/verify",
         "/api/v1/auth/sessions/current",
         "/api/v1/auth/token/refresh",
+        "/api/v1/fasting-sessions",
+        "/api/v1/fasting-sessions/{fastingSessionId}",
         "/api/v1/health",
+        "/api/v1/meals",
+        "/api/v1/meals/{mealId}",
         "/api/v1/ready",
+        "/api/v1/recognition-uploads",
+        "/api/v1/recognition-uploads/{uploadSessionId}/complete",
+        "/api/v1/recognitions",
+        "/api/v1/recognitions/{recognitionId}",
+        "/api/v1/recognitions/{recognitionId}/correction",
+        "/api/v1/sync/pull",
+        "/api/v1/sync/push",
         "/api/v1/users/me",
+        "/api/v1/users/me/data-export",
         "/api/v1/users/me/health-profile",
+        "/api/v1/users/me/preferences",
     }
     assert schema["paths"]["/api/v1/auth/otp/challenges"]["post"]["operationId"] == (
         "createOtpChallenge"
     )
     assert schema["paths"]["/api/v1/users/me"]["get"]["operationId"] == "getCurrentUser"
+    assert schema["paths"]["/api/v1/users/me"]["delete"]["operationId"] == "deleteCurrentUser"
+    assert (
+        schema["paths"]["/api/v1/users/me/data-export"]["get"]["operationId"]
+        == "exportCurrentUserData"
+    )
+    export_meal = schema["components"]["schemas"]["AccountExportMeal"]
+    assert export_meal["properties"]["localDay"]["pattern"] == (
+        r"^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"
+    )
 
 
 def test_openapi_applies_bearer_security_only_to_protected_operations(app: FastAPI) -> None:

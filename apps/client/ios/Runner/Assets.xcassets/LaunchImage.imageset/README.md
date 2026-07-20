@@ -1,5 +1,5 @@
-# Launch Screen Assets
+# Ordin launch mark
 
-You can customize the launch screen with your own desired assets by replacing the image files in this directory.
-
-You can also do it by opening your Flutter project's Xcode project with `open ios/Runner.xcworkspace`, selecting `Runner/Assets.xcassets` in the Project Navigator and dropping in the desired images.
+These files are generated from `assets/brand/ordin-app-icon-v1.png` by
+`assets/brand/generate_platform_assets.ps1`. Do not replace or resize them in
+Xcode; regenerate all native brand assets from the repository master instead.

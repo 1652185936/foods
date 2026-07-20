@@ -1,0 +1,1 @@
+"""Food-image recognition domain."""

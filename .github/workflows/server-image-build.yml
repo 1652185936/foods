@@ -1,0 +1,109 @@
+name: Server container build check
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - server/**
+      - deploy/compose.production.yml
+      - deploy/.env.production.example
+      - .github/workflows/server-image-build.yml
+  pull_request:
+    paths:
+      - server/**
+      - deploy/compose.production.yml
+      - deploy/.env.production.example
+      - .github/workflows/server-image-build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-image-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ORDIN_CI_IMAGE: ordin-server:ci-${{ github.sha }}
+
+jobs:
+  build:
+    name: Build production server image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Build without publishing
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: server
+          file: server/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.ORDIN_CI_IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Verify hardened runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(docker image inspect --format '{{.Config.User}}' "$ORDIN_CI_IMAGE")" = "ordin"
+          docker run --rm \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m \
+            --entrypoint python \
+            "$ORDIN_CI_IMAGE" \
+            -c "import celery, fastapi, ordin; print(ordin.__version__)"
+
+      - name: Validate production Compose
+        env:
+          ORDIN_IMAGE_REPOSITORY: ghcr.io/example/ordin-server
+          ORDIN_IMAGE_SHA256: "0000000000000000000000000000000000000000000000000000000000000000"
+        shell: bash
+        run: |
+          set -euo pipefail
+          compose_config="$(mktemp)"
+          trap 'rm -f "$compose_config"' EXIT
+          docker compose \
+            --env-file deploy/.env.production.example \
+            --file deploy/compose.production.yml \
+            --profile tools \
+            config --quiet
+          docker compose \
+            --env-file deploy/.env.production.example \
+            --file deploy/compose.production.yml \
+            --profile tools \
+            config --format json > "$compose_config"
+          python - "$compose_config" <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          configuration = json.loads(Path(sys.argv[1]).read_text())
+          expected_image = "ghcr.io/example/ordin-server@sha256:" + "0" * 64
+          digest_reference = re.compile(r"^[^@]+@sha256:[0-9a-f]{64}$")
+          for service_name in ("migrate", "api", "worker", "beat"):
+              image = configuration["services"][service_name]["image"]
+              if image != expected_image or digest_reference.fullmatch(image) is None:
+                  raise SystemExit(
+                      f"{service_name} is not pinned to the expected digest: {image}"
+                  )
+          environment = set(configuration["services"]["migrate"].get("environment", {}))
+          expected = {"ORDIN_DATABASE_URL"}
+          if environment != expected:
+              raise SystemExit(f"unexpected migrate environment: {sorted(environment)}")
+          PY
