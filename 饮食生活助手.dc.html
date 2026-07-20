@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F7F8F5">
+<title>食刻 · 饮食生活助手</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Manrope';src:url('fonts/Manrope-Variable.ttf') format('truetype');font-weight:200 800;font-display:swap}
+@font-face{font-family:'Manrope';src:url('fonts/Manrope-Bold.ttf') format('truetype');font-weight:700;font-display:swap}
+@font-face{font-family:'Manrope';src:url('fonts/Manrope-ExtraBold.ttf') format('truetype');font-weight:800;font-display:swap}
+:root{--ink:#162019;--muted:#778079;--line:#E3E7E2;--surface:#FFFFFF;--canvas:#F7F8F5;--forest:#173F2C;--leaf:#2E7551;--tomato:#E85D3F;--sun:#F3B340;--blue:#3D6CA8}
+*{box-sizing:border-box;letter-spacing:0}
+html,body{margin:0;min-height:100%}
+body{background:#E8ECE8;font-family:'Manrope','Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink)}
+button{font-family:'Manrope','Noto Sans SC',system-ui,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid rgba(61,108,168,.32);outline-offset:2px}
+a{color:var(--leaf);text-decoration:none}a:hover{color:var(--forest)}
+img{display:block;max-width:100%}
+.app-stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 16px;background:linear-gradient(145deg,#E9EEE9 0%,#F4F1EA 100%)}
+.device-shell{position:relative;width:414px;height:892px;border-radius:46px;background:#111512;padding:9px;box-shadow:0 28px 72px rgba(19,38,28,.22);flex:none}
+.device-island{position:absolute;top:17px;left:50%;transform:translateX(-50%);width:112px;height:25px;background:#111512;border-radius:0 0 15px 15px;z-index:40}
+.app-surface{position:relative;width:100%;height:100%;border-radius:38px;overflow:hidden;background:var(--canvas);display:flex;flex-direction:column}
+.status-bar{height:46px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 6px;font-size:13px;font-weight:800;color:var(--ink);z-index:30;background:var(--canvas)}
+.app-viewport{flex:1;position:relative;overflow:hidden}
+.app-screen{position:absolute;inset:0;overflow-y:auto;padding:8px 18px 112px;animation:slideup .3s ease both;background:var(--canvas);overscroll-behavior:contain}
+.screen-header{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 18px}
+.brand-lockup{display:flex;align-items:center;gap:10px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:var(--forest);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 14px rgba(23,63,44,.18)}
+.brand-name{font-size:13px;font-weight:800;color:var(--ink);line-height:1.1}
+.brand-meta{font-size:10px;font-weight:700;color:var(--muted);margin-top:3px}
+.icon-button{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.page-kicker{font-size:11px;font-weight:800;color:var(--leaf);margin-bottom:5px}
+.page-title{font-size:30px;line-height:1.12;font-weight:800;color:var(--ink);margin:0}
+.page-subtitle{font-size:13px;line-height:1.55;color:var(--muted);font-weight:600;margin-top:7px}
+.mode-switch{position:relative;display:flex;background:#E9EDE8;border-radius:12px;padding:4px;margin:18px 0 16px}
+.mode-switch__thumb{position:absolute;top:4px;bottom:4px;width:calc(50% - 4px);border-radius:9px;background:#fff;box-shadow:0 2px 8px rgba(22,32,25,.1);transition:transform .3s cubic-bezier(.5,1.3,.4,1)}
+.mode-switch button{position:relative;flex:1;border:0;background:transparent;padding:11px 0;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.takeout-hero{position:relative;height:360px;border-radius:8px;overflow:hidden;background:#17211A;box-shadow:0 14px 34px rgba(24,42,31,.16)}
+.takeout-hero>img{width:100%;height:100%;object-fit:cover;object-position:center 58%}
+.takeout-hero:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,20,14,.08) 16%,rgba(11,20,14,.9) 100%)}
+.hero-topline{position:absolute;z-index:2;top:18px;left:18px;right:18px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+.eyebrow-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.42);background:rgba(12,22,16,.28);padding:7px 10px;border-radius:999px;font-size:10px;font-weight:800;backdrop-filter:blur(10px)}
+.hero-copy{position:absolute;z-index:2;left:20px;right:20px;bottom:20px;color:#fff;text-align:left}
+.hero-copy h2{font-size:31px;line-height:1.13;margin:7px 0 0;font-weight:800}
+.hero-copy p{font-size:12px;line-height:1.55;margin:8px 0 0;color:rgba(255,255,255,.78);font-weight:600;max-width:260px}
+.hero-tags{display:flex;gap:7px;margin-top:12px}
+.hero-tags span{border:1px solid rgba(255,255,255,.38);padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(8,15,11,.18)}
+.primary-button{width:100%;border:0;border-radius:12px;padding:16px;background:var(--forest);color:#fff;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 8px 20px rgba(23,63,44,.16)}
+.secondary-button{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;color:var(--ink);font-size:14px;font-weight:800;cursor:pointer}
+.section-label{font-size:15px;font-weight:800;color:var(--ink);margin:22px 2px 12px;display:flex;align-items:center;justify-content:space-between}
+.section-label small{font-size:11px;color:var(--muted);font-weight:700}
+.recommend-card{overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(27,42,32,.07)}
+.recommend-media{position:relative;height:160px;background:#E8ECE8;overflow:hidden}
+.recommend-media img{width:100%;height:100%;object-fit:cover}
+.recommend-media__badge{position:absolute;top:12px;left:12px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.9);color:var(--forest);font-size:10px;font-weight:800;backdrop-filter:blur(8px)}
+.recommend-body{padding:14px}
+.metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.metric-row>div{min-width:0}.metric-row strong{display:block;font-size:17px;color:var(--ink)}.metric-row span{font-size:10px;color:var(--muted);font-weight:700}
+.calorie-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px;box-shadow:0 10px 30px rgba(27,42,32,.06)}
+.capture-card{width:100%;margin-top:14px;border:1px solid var(--line);border-radius:8px;padding:0;background:#fff;cursor:pointer;overflow:hidden;display:flex;align-items:stretch;text-align:left;color:var(--ink)}
+.capture-card img{width:112px;min-height:110px;object-fit:cover}.capture-card__copy{padding:16px 14px;display:flex;flex-direction:column;justify-content:center}.capture-card__copy strong{font-size:15px}.capture-card__copy span{font-size:11px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:4px}
+.meal-row{display:flex;gap:13px;align-items:center;background:#fff;border-bottom:1px solid var(--line);padding:12px 0;animation:rowin .3s ease both}.meal-row:first-child{padding-top:0}.meal-row:last-child{border-bottom:0;padding-bottom:0}.meal-photo{width:54px;height:54px;border-radius:8px;object-fit:cover;flex:none;background:#E8ECE8}
+.bottom-nav{flex:none;position:relative;background:rgba(247,248,245,.96);border-top:1px solid var(--line);padding:7px 6px 4px;z-index:35;backdrop-filter:blur(18px)}
+.bottom-nav button{position:relative;min-height:49px;border-radius:10px!important;transition:background .2s ease,color .2s ease}
+.bottom-nav button:active{background:#E9EDE8!important}
+.sheet{width:100%;background:var(--canvas);border-radius:20px 20px 0 0;padding:16px 20px 28px;animation:slideup .3s ease}
+.scan-photo{position:relative;width:190px;height:190px;margin:0 auto;border-radius:8px;overflow:hidden;background:#E8ECE8}.scan-photo>img{width:100%;height:100%;object-fit:cover}.scan-photo:after{content:'';position:absolute;inset:0;border:1px solid rgba(255,255,255,.7);border-radius:8px;pointer-events:none}
+@keyframes pop{0%{transform:scale(.92);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes slideup{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px) rotate(-2deg)}75%{transform:translateY(4px) rotate(2deg)}}
+@keyframes conf{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(340px) rotate(540deg);opacity:0}}
+@keyframes toastin{from{transform:translate(-50%,14px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes scanline{0%{top:10%}100%{top:86%}}
+@keyframes rowin{from{transform:translateY(6px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes press{0%{transform:scale(1)}50%{transform:scale(.97)}100%{transform:scale(1)}}
+::-webkit-scrollbar{width:0}
+@media(max-width:520px){
+  body{background:var(--canvas)}
+  .app-stage{padding:0;min-height:100dvh;background:var(--canvas)}
+  .device-shell{width:100vw;height:100dvh;border-radius:0;padding:0;background:var(--canvas);box-shadow:none}
+  .device-island{display:none}
+  .app-surface{border-radius:0}
+  .status-bar{height:max(34px,env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
+  .bottom-nav{padding-bottom:max(4px,env(safe-area-inset-bottom))}
+}
+</style>
+</helmet>
+<div class="app-stage">
+<div class="device-shell">
+<div class="device-island"></div>
+<div class="app-surface">
+
+  <!-- status bar -->
+  <div class="status-bar">
+    <span style="letter-spacing:.5px">9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#16171C"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#16171C"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#16171C"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#16171C"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 .8 4.4a10 10 0 0 1 14.4 0L8 11.5Z" fill="#16171C"/></svg>
+      <svg width="24" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="20" height="10" rx="3" fill="none" stroke="#16171C" stroke-width="1.2" opacity=".5"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="#16171C"/><rect x="22" y="4" width="1.6" height="4" rx=".8" fill="#16171C" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="app-viewport">
+
+    <!-- ===================== 今天吃什么 ===================== -->
+    <sc-if value="{{ isEat }}" hint-placeholder-val="{{ true }}">
+    <div class="app-screen">
+      <div class="screen-header">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M9 5c0 1-.8 1.4-.8 2.3S9 8.6 9 8.6"/><path d="M13 5c0 1-.8 1.4-.8 2.3S13 8.6 13 8.6"/></svg>
+          </div>
+          <div><div class="brand-name">食刻</div><div class="brand-meta">让每一餐更轻松</div></div>
+        </div>
+        <button onClick="{{ toastNotice }}" class="icon-button" aria-label="查看提醒">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+        </button>
+      </div>
+      <div style="margin:0 2px">
+        <div class="page-kicker">下午好，今天也要好好吃饭</div>
+        <h1 class="page-title">这一餐，吃点什么？</h1>
+        <div class="page-subtitle">从附近外卖到家常料理，少一点纠结，多一点期待。</div>
+      </div>
+
+      <!-- mode segmented -->
+      <div class="mode-switch">
+        <div class="mode-switch__thumb" style="transform:translateX({{ modeShift }})"></div>
+        <button onClick="{{ setTakeout }}" style="color:{{ takeoutColor }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h2l2-5h9l3 5h2"/><circle cx="7" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M8 13h9"/></svg>点外卖</button>
+        <button onClick="{{ setHome }}" style="color:{{ homeColor }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>在家做</button>
+      </div>
+
+      <!-- ---- takeout ---- -->
+      <sc-if value="{{ isTakeout }}" hint-placeholder-val="{{ true }}">
+      <div style="animation:slideup .28s ease both">
+        <div class="takeout-hero">
+          <img src="./assets/app/malatang-hero.webp" alt="一碗热气腾腾的麻辣烫">
+          <div class="hero-topline">
+            <span class="eyebrow-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 4 3 3-3 3"/><path d="M3 7h18"/><path d="m6 20-3-3 3-3"/><path d="M21 17H3"/></svg>不筛口味 · 纯随机</span>
+            <span style="font-size:11px;font-weight:800">晚餐灵感</span>
+          </div>
+          <div class="hero-copy">
+            <sc-if value="{{ takeoutShown }}" hint-placeholder-val="{{ true }}">
+              <div key="{{ takeoutKey }}" style="animation:{{ takeoutAnim }}">
+                <div style="font-size:11px;font-weight:800;color:#F3B340">今晚就吃</div>
+                <h2>{{ takeoutShown.name }}</h2>
+                <div class="hero-tags"><span>{{ takeoutShown.taste }}</span><span>{{ takeoutShown.cat }}</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noTakeout }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="font-size:11px;font-weight:800;color:#F3B340">把选择交给食刻</div>
+                <h2>今晚，让运气替你点菜</h2>
+                <p>点一下随机，不问偏好，也不计算热量，三秒结束纠结。</p>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <sc-if value="{{ showTakeoutPrimary }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ rollTakeout }}" class="primary-button" style="margin-top:14px" style-active="animation:press .2s ease"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 4 3 3-3 3"/><path d="M3 7h18"/><path d="m6 20-3-3 3-3"/><path d="M21 17H3"/></svg>{{ rollLabel }}</button>
+        </sc-if>
+        <sc-if value="{{ hasTakeout }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;margin-top:10px">
+            <button onClick="{{ rollTakeout }}" class="secondary-button" style="flex:1">换一个</button>
+            <button onClick="{{ eatTakeout }}" class="primary-button" style="flex:1.35;padding:14px;background:#E85D3F;box-shadow:none">就吃这个</button>
+          </div>
+        </sc-if>
+        <div style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:11px;color:#778079;font-weight:600;margin-top:13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>本次不会抽到相同结果</div>
+      </div>
+      </sc-if>
+
+      <!-- ---- home ---- -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:slideup .28s ease both">
+        <div style="display:flex;gap:6px;border-bottom:1px solid #E3E7E2;margin-bottom:16px">
+          <button onClick="{{ setHomeRandom }}" style="flex:1;border:0;border-bottom:2px solid {{ hrLine }};padding:11px 6px;background:transparent;color:{{ hrColor }};font-size:14px;font-weight:800;cursor:pointer">智能推荐</button>
+          <button onClick="{{ setHomeIng }}" style="flex:1;border:0;border-bottom:2px solid {{ hiLine }};padding:11px 6px;background:transparent;color:{{ hiColor }};font-size:14px;font-weight:800;cursor:pointer">按食材找菜</button>
+        </div>
+
+        <sc-if value="{{ isHomeRandom }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex;gap:8px;overflow-x:auto;padding:0 0 13px">
+            <button onClick="{{ chipQuick }}" style="flex:none;border:1px solid #E3E7E2;background:#fff;color:#4F5A52;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">15 分钟内</button>
+            <button onClick="{{ chipVeg }}" style="flex:none;border:1px solid #E3E7E2;background:#fff;color:#4F5A52;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">清淡蔬食</button>
+            <button onClick="{{ chipLow }}" style="flex:none;border:1px solid #E3E7E2;background:#fff;color:#4F5A52;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">低于 300 千卡</button>
+            <button onClick="{{ chipCuisine }}" style="flex:none;border:1px solid #E3E7E2;background:#fff;color:#4F5A52;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">川味</button>
+          </div>
+          <sc-if value="{{ homeShown }}" hint-placeholder-val="{{ true }}">
+          <div key="{{ homeKey }}" class="recommend-card" style="animation:{{ homeAnim }}">
+            <div class="recommend-media">
+              <img src="{{ homeShown.image }}" alt="{{ homeShown.name }}">
+              <span class="recommend-media__badge">根据今日余量推荐</span>
+            </div>
+            <div class="recommend-body">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                <div><div style="font-size:22px;font-weight:800;color:#162019">{{ homeShown.name }}</div><div style="font-size:12px;color:#778079;font-weight:700;margin-top:3px">{{ homeShown.cuisine }} · {{ homeShown.taste }}</div></div>
+                <button onClick="{{ wishHome }}" class="icon-button" style="width:36px;height:36px;flex:none" aria-label="加入想吃"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E85D3F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-9.2-9A4.6 4.6 0 0 1 12 6.5 4.6 4.6 0 0 1 21.2 11C19 15.5 12 20 12 20z"/></svg></button>
+              </div>
+              <div class="metric-row">
+                <div><strong>{{ homeShown.kcal }}</strong><span>千卡 / 份</span></div>
+                <div><strong>{{ homeShown.time }} 分</strong><span>预计耗时</span></div>
+                <div><strong>{{ homeShown.diff }}</strong><span>烹饪难度</span></div>
+              </div>
+            <div style="margin-top:10px;padding-top:9px;border-top:1px solid #E3E7E2">
+              <div style="font-size:10px;font-weight:800;color:#778079;margin-bottom:6px">你需要准备</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ homeShown.ing }}" as="ig" hint-placeholder-count="3">
+                  <span style="background:#EEF2ED;color:#3E5D49;font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px">{{ ig }}</span>
+                </sc-for>
+              </div>
+            </div>
+            </div>
+          </div>
+          </sc-if>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button onClick="{{ rollHome }}" class="secondary-button" style="flex:1">换一道</button>
+            <button onClick="{{ eatHome }}" class="primary-button" style="flex:1.55;padding:14px;box-shadow:none">查看做法</button>
+          </div>
+          <div style="margin-top:18px;background:#EDF1EC;border-radius:8px;padding:15px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:14px;font-weight:800;color:#162019">下次想吃</div>
+              <span style="font-size:11px;color:#778079;font-weight:700">已存 {{ wishCount }} 道</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px">
+              <sc-for list="{{ wishlist }}" as="w" hint-placeholder-count="2">
+                <span style="background:#FFFFFF;color:#3E5D49;font-size:11px;font-weight:700;padding:6px 10px;border-radius:6px">{{ w }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isHomeIng }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E3E7E2;border-radius:10px;padding:11px 13px;margin-bottom:15px;color:#778079"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span style="font-size:12px;font-weight:600">搜索冰箱里的食材</span><button onClick="{{ toastScanIng }}" style="margin-left:auto;border:0;background:#EDF1EC;color:#173F2C;border-radius:7px;padding:6px 8px;font-size:11px;font-weight:800;cursor:pointer">拍照录入</button></div>
+          <div style="font-size:11px;font-weight:800;color:#778079;margin-bottom:10px">常用食材</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+            <sc-for list="{{ ingPool }}" as="ig" hint-placeholder-count="8">
+              <button onClick="{{ ig.onClick }}" style="border:1px solid {{ ig.bd }};background:{{ ig.bg }};color:{{ ig.fg }};border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">{{ ig.mark }}{{ ig.name }}</button>
+            </sc-for>
+          </div>
+          <div class="section-label" style="margin-top:0"><span>优先推荐</span><small>{{ ingReadyCount }} 道食材齐全</small></div>
+          <div style="display:flex;flex-direction:column;gap:0;background:#fff;border:1px solid #E3E7E2;border-radius:8px;padding:0 12px">
+            <sc-for list="{{ ingResults }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;align-items:center;border-bottom:1px solid #E3E7E2;padding:12px 0;animation:rowin .3s ease both">
+                <img src="{{ r.image }}" alt="{{ r.name }}" style="width:58px;height:58px;border-radius:8px;object-fit:cover;flex:none">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px;font-weight:800;color:#162019">{{ r.name }}</div>
+                  <div style="font-size:11px;color:#778079;font-weight:600;margin-top:2px">{{ r.kcal }} 千卡 · {{ r.time }} 分钟</div>
+                  <div style="margin-top:6px"><span style="{{ r.badgeStyle }}">{{ r.badgeText }}</span></div>
+                </div>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9AA29C" stroke-width="1.8" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ showConfetti }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:20">
+        <sc-for list="{{ confetti }}" as="cf" hint-placeholder-count="0">
+          <div style="{{ cf.style }}"></div>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===================== 拍照识别 ===================== -->
+    <sc-if value="{{ isCal }}" hint-placeholder-val="{{ false }}">
+    <div class="app-screen">
+      <div class="screen-header">
+        <div><div class="page-kicker">7 月 20 日 · 周一</div><h1 class="page-title">今日饮食</h1></div>
+        <button onClick="{{ toastHistory }}" class="icon-button" aria-label="查看历史记录"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
+      </div>
+      <div class="calorie-card" style="display:flex;align-items:center;gap:18px">
+        <div style="position:relative;width:104px;height:104px;flex:none">
+          <svg width="104" height="104" viewBox="0 0 104 104" style="transform:rotate(-90deg)">
+            <circle cx="52" cy="52" r="44" fill="none" stroke="#E6EBE6" stroke-width="9"/>
+            <circle cx="52" cy="52" r="44" fill="none" stroke="#2E7551" stroke-width="9" stroke-linecap="round" stroke-dasharray="276" stroke-dashoffset="{{ calRingOff }}" style="transition:stroke-dashoffset .8s ease"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="font-size:23px;font-weight:800;line-height:1;color:#162019">{{ todayKcal }}</div>
+            <div style="font-size:10px;color:#778079;font-weight:700;margin-top:4px">已摄入</div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:800;color:#778079">今日还可以吃</div>
+          <div style="font-size:32px;font-weight:800;color:#173F2C;line-height:1.2;margin-top:2px">{{ remainKcal }}<span style="font-size:12px;color:#778079"> 千卡</span></div>
+          <div style="height:6px;border-radius:6px;background:#E6EBE6;margin-top:10px;overflow:hidden"><div style="height:100%;width:{{ calPercent }};border-radius:6px;background:#F3B340"></div></div>
+          <div style="font-size:10px;color:#778079;font-weight:600;margin-top:5px">目标 {{ calTarget }} 千卡</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px">
+        <div style="background:#EEF3F7;border-radius:8px;padding:11px 12px"><div style="font-size:15px;font-weight:800;color:#3D6CA8">{{ carbG }}g</div><div style="font-size:10px;color:#778079;font-weight:700;margin-top:2px">碳水</div></div>
+        <div style="background:#EDF2ED;border-radius:8px;padding:11px 12px"><div style="font-size:15px;font-weight:800;color:#2E7551">{{ proG }}g</div><div style="font-size:10px;color:#778079;font-weight:700;margin-top:2px">蛋白质</div></div>
+        <div style="background:#FBF2DF;border-radius:8px;padding:11px 12px"><div style="font-size:15px;font-weight:800;color:#A76F13">{{ fatG }}g</div><div style="font-size:10px;color:#778079;font-weight:700;margin-top:2px">脂肪</div></div>
+      </div>
+
+      <button onClick="{{ openCam }}" class="capture-card">
+        <img src="./assets/app/tomato-eggs-hero.webp" alt="拍照识别示例菜品">
+        <span class="capture-card__copy"><strong>拍一拍，自动记一餐</strong><span>识别菜品与营养，结果可以继续手动修正。</span><span style="display:flex;align-items:center;gap:5px;color:#2E7551;font-weight:800;margin-top:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7H7l1.4-2h7.2L17 7h2.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg>打开相机</span></span>
+      </button>
+
+      <div class="section-label"><span>今日记录</span><small>{{ mealCount }} 餐 · {{ todayKcal }} 千卡</small></div>
+      <div style="background:#fff;border:1px solid #E3E7E2;border-radius:8px;padding:14px">
+        <sc-for list="{{ meals }}" as="m" hint-placeholder-count="3">
+          <div class="meal-row">
+            <img class="meal-photo" src="{{ m.image }}" alt="{{ m.name }}">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:7px"><span style="font-size:14px;font-weight:800;color:#162019">{{ m.name }}</span><span style="{{ m.tagStyle }}">{{ m.type }}</span></div>
+              <div style="font-size:11px;color:#778079;font-weight:600;margin-top:3px">{{ m.t }} · 碳 {{ m.c }}g / 蛋 {{ m.p }}g / 脂 {{ m.f }}g</div>
+            </div>
+            <div style="text-align:right"><div style="font-size:16px;font-weight:800;color:#162019">{{ m.kcal }}</div><div style="font-size:9px;color:#778079;font-weight:700">千卡</div></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="text-align:center;font-size:10px;color:#909892;font-weight:600;margin-top:14px">每日目标会随身体数据和目标自动调整</div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== 轻断食 ===================== -->
+    <sc-if value="{{ isFast }}" hint-placeholder-val="{{ false }}">
+    <div class="app-screen" style="background:{{ fastBg }}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin:5px 2px 8px">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:{{ fastMuted }}">{{ fastMode }} 计划 · 第 13 天</div>
+          <div style="font-size:28px;font-weight:800;color:{{ fastInk }};margin-top:3px">{{ phaseLabel }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;background:{{ streakBg }};padding:8px 11px;border-radius:999px"><svg width="15" height="15" viewBox="0 0 24 24" fill="{{ streakFill }}"><path d="M12 2c1 3.5 4.2 4.4 4.2 8.4A4.2 4.2 0 0 1 12 14.6a4.2 4.2 0 0 1-4.2-4.2c0-1.2.4-2 .9-2.7.6 1 1.7 1.2 1.7 1.2C10.6 6.3 11 4.2 12 2z"/></svg><span style="font-size:15px;font-weight:800;color:{{ fastInk }}">连续 {{ streak }} 天</span></div>
+      </div>
+
+      <div style="display:flex;justify-content:center;margin:16px 0 6px">
+        <div style="position:relative;width:262px;height:262px">
+          <svg width="262" height="262" viewBox="0 0 262 262" style="transform:rotate(-90deg)">
+            <circle cx="131" cy="131" r="118" fill="none" stroke="{{ ringTrack }}" stroke-width="14"/>
+            <circle cx="131" cy="131" r="118" fill="none" stroke="{{ ringColor }}" stroke-width="14" stroke-linecap="round" stroke-dasharray="741" stroke-dashoffset="{{ ringOff }}" style="transition:stroke-dashoffset 1s linear"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="font-size:11px;font-weight:800;color:{{ fastMuted }}">{{ phaseSub }}</div>
+            <div style="font-size:46px;font-weight:800;color:{{ fastInk }};font-variant-numeric:tabular-nums;margin:4px 0">{{ remainStr }}</div>
+            <div style="font-size:11px;font-weight:700;color:{{ fastMuted }}">进食窗口 12:00 - 20:00</div>
+          </div>
+        </div>
+      </div>
+
+      <button onClick="{{ toggleFast }}" class="primary-button" style="margin-top:10px;background:{{ fastBtnBg }};color:{{ fastBtnFg }};box-shadow:none">{{ fastBtnLabel }}</button>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <sc-for list="{{ fastModes }}" as="fm" hint-placeholder-count="4">
+          <button onClick="{{ fm.onClick }}" style="flex:1;border:1px solid {{ fm.bd }};background:{{ fm.bg }};color:{{ fm.fg }};border-radius:10px;padding:10px 0;font-size:12px;font-weight:800;cursor:pointer">{{ fm.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="margin-top:20px;background:{{ fastCardBg }};border:1px solid {{ fastLine }};border-radius:8px;padding:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="font-size:14px;font-weight:800;color:{{ fastInk }}">断食日历</span><span style="font-size:12px;color:{{ fastMuted }};font-weight:700">7 月 · 达标 86%</span></div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px">
+          <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="28">
+            <div style="{{ d.style }}">{{ d.n }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;background:{{ fastCardBg }};border:1px solid {{ fastLine }};border-radius:8px;padding:18px">
+        <div style="font-size:14px;font-weight:800;color:{{ fastInk }};margin-bottom:16px">阶段成就</div>
+        <div style="display:flex;gap:12px">
+          <sc-for list="{{ badges }}" as="b" hint-placeholder-count="3">
+            <div style="flex:1;text-align:center;opacity:{{ b.op }}">
+              <div style="width:58px;height:58px;margin:0 auto;border-radius:50%;border:2.5px solid {{ b.ring }};display:flex;align-items:center;justify-content:center;background:{{ b.fill }}"><span style="font-size:19px;font-weight:800;color:{{ b.numColor }}">{{ b.num }}</span></div>
+              <div style="font-size:11px;font-weight:800;color:{{ fastInk }};margin-top:8px">{{ b.label }}</div>
+              <div style="font-size:10px;color:{{ fastMuted }};font-weight:600">{{ b.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== 好友 ===================== -->
+    <sc-if value="{{ isFriends }}" hint-placeholder-val="{{ false }}">
+    <div class="app-screen">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin:6px 2px 16px">
+        <div>
+          <div class="page-kicker">一起坚持，比一个人更容易</div>
+          <div class="page-title">好友互勉</div>
+        </div>
+        <button onClick="{{ toastAdd }}" class="icon-button" style="background:#173F2C;color:#fff;border-color:#173F2C" aria-label="添加好友"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+
+      <div style="background:#173F2C;border-radius:8px;padding:20px;color:#FFFFFF;box-shadow:0 12px 26px rgba(23,63,44,.14)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:15px;font-weight:800">减脂突击队</div>
+          <span style="border:1px solid rgba(245,237,223,.3);font-size:12px;font-weight:800;padding:4px 11px;border-radius:20px;white-space:nowrap">第 12 / 30 天</span>
+        </div>
+        <div style="font-size:12px;opacity:.7;margin-top:6px;font-weight:600">4 人同行 · 今日 3 人已打卡</div>
+        <div style="display:flex;margin-top:14px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#3D6CA8;border:2.5px solid #173F2C;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">柠</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:#F3B340;border:2.5px solid #173F2C;margin-left:-10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#173F2C">布</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:#E85D3F;border:2.5px solid #173F2C;margin-left:-10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">土</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:#FFFFFF;border:2.5px solid #173F2C;margin-left:-10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#173F2C">你</div>
+        </div>
+      </div>
+
+      <div style="font-size:15px;font-weight:800;color:#16171C;margin:22px 2px 12px">我的好友</div>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <sc-for list="{{ friends }}" as="f" hint-placeholder-count="3">
+          <div style="background:#FFFFFF;border:1px solid #E3E7E2;border-radius:8px;padding:15px">
+            <div style="display:flex;align-items:center;gap:13px">
+              <div style="width:48px;height:48px;border-radius:8px;background:{{ f.avBg }};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:{{ f.avFg }};flex:none;position:relative">{{ f.mono }}<span style="{{ f.dotStyle }}"></span></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:16px;font-weight:800;color:#16171C">{{ f.name }}</div>
+                <div style="font-size:12px;font-weight:700;color:#9A6B3E;margin-top:3px">已成为好友 {{ f.days }} 天</div>
+              </div>
+              <button onClick="{{ f.onCheer }}" style="border:0;border-radius:12px;padding:9px 15px;font:800 13px 'Manrope','Noto Sans SC';cursor:pointer;font-family:'Manrope','Noto Sans SC';background:{{ f.cheerBg }};color:{{ f.cheerFg }}">{{ f.cheerLabel }}</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <div style="flex:1;background:#F2F4F2;border-radius:7px;padding:8px 12px;font-size:12px;font-weight:700;color:#778079">连续 <span style="font-size:15px;font-weight:800;color:#2E7551">{{ f.streak }}</span> 天</div>
+              <div style="flex:1.3;background:{{ f.stBg }};border-radius:7px;padding:8px 12px;font-size:12px;font-weight:800;color:{{ f.stFg }};display:flex;align-items:center">{{ f.status }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:15px;font-weight:800;color:#16171C;margin:22px 2px 12px">本周连续榜</div>
+      <div style="background:#FFFFFF;border:1px solid #E3E7E2;border-radius:8px;padding:6px 4px">
+        <sc-for list="{{ rank }}" as="r" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:13px;padding:11px 14px">
+            <div style="width:24px;font-size:15px;font-weight:800;color:{{ r.rkColor }};text-align:center">{{ r.rk }}</div>
+            <div style="width:36px;height:36px;border-radius:8px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:{{ r.fg }}">{{ r.mono }}</div>
+            <div style="flex:1;font-size:15px;font-weight:800;color:#16171C">{{ r.name }}</div>
+            <div style="font-size:15px;font-weight:800;color:#2E7551">{{ r.streak }} 天</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== 我的 ===================== -->
+    <sc-if value="{{ isMe }}" hint-placeholder-val="{{ false }}">
+    <div class="app-screen">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 2px 14px"><div><div class="page-kicker">个人中心</div><div class="page-title">我的健康</div></div><button onClick="{{ toastEditProfile }}" class="icon-button" aria-label="编辑个人资料"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button></div>
+      <div style="background:#173F2C;border-radius:8px;padding:22px 20px;color:#FFFFFF">
+        <div style="display:flex;align-items:center;gap:15px">
+          <div style="width:66px;height:66px;border-radius:8px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex:none">狐</div>
+          <div style="flex:1">
+            <div style="font-size:21px;font-weight:800">小狐狸</div>
+            <div style="font-size:12px;opacity:.85;font-weight:600;margin-top:2px">目标 减脂 · 已坚持 42 天</div>
+            <div style="display:inline-flex;gap:6px;margin-top:8px"><span style="border:1px solid rgba(255,246,238,.4);font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap">16:8</span><span style="border:1px solid rgba(255,246,238,.4);font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap">忌香菜</span></div>
+          </div>
+        </div>
+        <div style="display:flex;margin-top:20px;background:rgba(255,255,255,.11);border-radius:8px;padding:14px 6px">
+          <div style="flex:1;text-align:center"><div style="font-size:21px;font-weight:800">168</div><div style="font-size:10px;opacity:.8;font-weight:700">身高 cm</div></div>
+          <div style="width:1px;background:rgba(255,246,238,.22)"></div>
+          <div style="flex:1;text-align:center"><div style="font-size:21px;font-weight:800">58.5</div><div style="font-size:10px;opacity:.8;font-weight:700">体重 kg</div></div>
+          <div style="width:1px;background:rgba(255,246,238,.22)"></div>
+          <div style="flex:1;text-align:center"><div style="font-size:21px;font-weight:800">54</div><div style="font-size:10px;opacity:.8;font-weight:700">目标 kg</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;background:#FFFFFF;border:1px solid #E3E7E2;border-radius:8px;padding:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:800;color:#162019">体重曲线</span><span style="font-size:12px;color:#2E7551;font-weight:800">-4.5 kg</span></div>
+        <svg width="100%" height="86" viewBox="0 0 300 86" preserveAspectRatio="none" style="margin-top:8px">
+          <polyline points="0,18 50,26 100,24 150,42 200,48 250,60 300,68" fill="none" stroke="#2E7551" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="300" cy="68" r="4.5" fill="#2E7551"/>
+        </svg>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E3E7E2;border-radius:8px;padding:16px"><div style="font-size:26px;font-weight:800;color:#2E7551">86%</div><div style="font-size:12px;color:#778079;font-weight:700;margin-top:2px">断食完成率</div></div>
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E3E7E2;border-radius:8px;padding:16px"><div style="font-size:26px;font-weight:800;color:#3D6CA8">42</div><div style="font-size:12px;color:#778079;font-weight:700;margin-top:2px">连续打卡天</div></div>
+      </div>
+
+      <div style="font-size:15px;font-weight:800;color:#16171C;margin:22px 2px 12px">成就墙</div>
+      <div style="display:flex;gap:10px">
+        <sc-for list="{{ wallBadges }}" as="b" hint-placeholder-count="4">
+          <div style="flex:1;aspect-ratio:1;border-radius:8px;background:{{ b.bg }};border:1px solid {{ b.bd }};display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:{{ b.op }}"><div style="font-size:16px;font-weight:800;color:{{ b.fg }}">{{ b.num }}</div><div style="font-size:10px;font-weight:800;color:{{ b.fg }};margin-top:4px">{{ b.label }}</div></div>
+        </sc-for>
+      </div>
+
+      <div style="margin-top:20px;background:#FFFFFF;border:1px solid #E3E7E2;border-radius:8px;overflow:hidden">
+        <sc-for list="{{ settings }}" as="s" hint-placeholder-count="5">
+          <div onClick="{{ s.onClick }}" style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid #E3E7E2;cursor:pointer">
+            <div style="width:34px;height:34px;border-radius:10px;background:{{ s.bg }};display:flex;align-items:center;justify-content:center;color:{{ s.fg }};font-size:13px;font-weight:800">{{ s.tag }}</div>
+            <span style="flex:1;font-size:15px;font-weight:700;color:#16171C">{{ s.label }}</span>
+            <span style="font-size:12px;color:#8A909C;font-weight:700">{{ s.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+
+  <!-- ===================== bottom nav ===================== -->
+  <div class="bottom-nav">
+    <div style="display:flex">
+      <button onClick="{{ navEat }}" style="flex:1;border:0;background:{{ bgEat }};display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;color:{{ colEat }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11h17"/><path d="M4.5 11a7.5 7.5 0 0 0 15 0"/><path d="M9 4c0 1-.9 1.4-.9 2.4S9 8 9 8"/><path d="M13 4c0 1-.9 1.4-.9 2.4S13 8 13 8"/></svg>
+        <span style="font-size:10px;font-weight:800">吃什么</span>
+      </button>
+      <button onClick="{{ navCal }}" style="flex:1;border:0;background:{{ bgCal }};display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;color:{{ colCal }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7H7l1.4-2h7.2L17 7h2.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg>
+        <span style="font-size:10px;font-weight:800">记录</span>
+      </button>
+      <button onClick="{{ navFast }}" style="flex:1;border:0;background:{{ bgFast }};display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;color:{{ colFast }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l2.8 1.8"/><path d="M9 3h6"/></svg>
+        <span style="font-size:10px;font-weight:800">断食</span>
+      </button>
+      <button onClick="{{ navFriends }}" style="flex:1;border:0;background:{{ bgFriends }};display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;color:{{ colFriends }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.6a3 3 0 0 1 0 5.6"/><path d="M17.5 13.6a5.3 5.3 0 0 1 3 4.9"/></svg>
+        <span style="font-size:10px;font-weight:800">好友</span>
+      </button>
+      <button onClick="{{ navMe }}" style="flex:1;border:0;background:{{ bgMe }};display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;color:{{ colMe }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5a7 7 0 0 1 14 0"/></svg>
+        <span style="font-size:10px;font-weight:800">我的</span>
+      </button>
+    </div>
+    <div style="width:128px;height:5px;border-radius:3px;background:#CBD2CC;margin:5px auto 2px"></div>
+  </div>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:120px;left:50%;transform:translateX(-50%);background:#162019;color:#FFFFFF;font-size:13px;font-weight:700;padding:11px 18px;border-radius:10px;z-index:60;animation:toastin .25s ease;white-space:nowrap;box-shadow:0 10px 28px rgba(22,32,25,.22)">{{ toast }}</div>
+  </sc-if>
+
+  <sc-if value="{{ camOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(10,18,13,.54);z-index:70;display:flex;align-items:flex-end;animation:slideup .2s ease;backdrop-filter:blur(4px)">
+      <div class="sheet">
+        <div style="position:relative;height:28px;margin-bottom:8px">
+          <div style="position:absolute;top:3px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:#CBD2CC"></div>
+          <button onClick="{{ closeCam }}" aria-label="关闭识别弹层" style="position:absolute;right:0;top:-5px;width:34px;height:34px;border:1px solid #E3E7E2;border-radius:50%;background:#FFFFFF;color:#5D675F;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
+        <sc-if value="{{ camScanning }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:center;padding:10px 0 20px">
+            <div class="scan-photo"><img src="./assets/app/tomato-eggs-hero.webp" alt="待识别的番茄炒蛋"><div style="position:absolute;z-index:2;left:8%;right:8%;height:2px;border-radius:2px;background:#F3B340;box-shadow:0 0 12px rgba(243,179,64,.7);animation:scanline 1s ease-in-out infinite alternate"></div></div>
+            <div style="font-size:18px;font-weight:800;color:#162019;margin-top:18px">正在分析这一餐</div>
+            <div style="font-size:12px;color:#778079;font-weight:600;margin-top:4px">识别菜品、份量与营养组成</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ camResult }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:pop .35s ease both">
+            <div style="display:flex;gap:15px;align-items:center">
+              <img src="./assets/app/tomato-eggs-hero.webp" alt="番茄炒蛋" style="width:88px;height:88px;border-radius:8px;object-fit:cover;flex:none">
+              <div style="flex:1">
+                <div style="font-size:11px;color:#2E7551;font-weight:800">已识别 · 可信度 92%</div>
+                <div style="font-size:22px;font-weight:800;color:#162019;margin-top:2px">番茄炒蛋</div>
+                <div style="font-size:25px;font-weight:800;color:#173F2C">236<span style="font-size:12px;color:#778079"> 千卡</span></div>
+              </div>
+              <button onClick="{{ toastCorrect }}" class="icon-button" style="width:34px;height:34px" aria-label="修正识别结果"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <div style="flex:1;background:#EEF3F7;border-radius:8px;padding:12px;text-align:center"><div style="font-size:17px;font-weight:800;color:#3D6CA8">9g</div><div style="font-size:10px;color:#778079;font-weight:700">碳水</div></div>
+              <div style="flex:1;background:#EDF2ED;border-radius:8px;padding:12px;text-align:center"><div style="font-size:17px;font-weight:800;color:#2E7551">12g</div><div style="font-size:10px;color:#778079;font-weight:700">蛋白质</div></div>
+              <div style="flex:1;background:#FBF2DF;border-radius:8px;padding:12px;text-align:center"><div style="font-size:17px;font-weight:800;color:#A76F13">16g</div><div style="font-size:10px;color:#778079;font-weight:700">脂肪</div></div>
+            </div>
+            <div style="font-size:11px;color:#778079;font-weight:800;margin:16px 0 8px">记入哪一餐</div>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ mealTypes }}" as="mt" hint-placeholder-count="4">
+                <button onClick="{{ mt.onClick }}" style="flex:1;border:1.5px solid {{ mt.bd }};background:{{ mt.bg }};color:{{ mt.fg }};border-radius:11px;padding:10px 0;font:800 13px 'Manrope','Noto Sans SC';cursor:pointer;font-family:'Manrope','Noto Sans SC'">{{ mt.label }}</button>
+              </sc-for>
+            </div>
+            <button onClick="{{ addMeal }}" class="primary-button" style="margin-top:16px">加入今日记录 · 236 千卡</button>
+          </div>
+        </sc-if>
+        <button onClick="{{ closeCam }}" style="width:100%;margin-top:8px;border:0;background:transparent;color:#778079;font-size:13px;font-weight:700;padding:9px;cursor:pointer">取消</button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:460,&quot;height&quot;:940}}">
+class Component extends DCLogic {
+  state = {
+    tab:'eat', eatMode:'takeout', homeSub:'random',
+    rolling:false, rollDish:null,
+    takeoutDish:null, takeoutLast:null, takeoutKey:0,
+    homeDish:{name:'番茄炒蛋',image:'./assets/app/tomato-eggs-hero.webp',cuisine:'家常',taste:'酸甜鲜香',kcal:236,time:12,diff:'简单',ing:['番茄','鸡蛋','葱']}, homeLast:null, homeKey:0,
+    showConfetti:false,
+    wishlist:['麻婆豆腐','酸辣土豆丝'],
+    selIng:['鸡蛋','番茄','米饭','青椒'],
+    meals:[
+      {id:1,name:'蓝莓香蕉燕麦',kcal:286,type:'早餐',c:43,p:10,f:8,image:'./assets/app/oats-breakfast.webp',t:'08:20'},
+      {id:2,name:'香煎鸡胸沙拉',kcal:348,type:'午餐',c:21,p:38,f:13,image:'./assets/app/chicken-salad.webp',t:'12:40'},
+    ],
+    camStep:'idle', mealType:'午餐',
+    calTarget:1600,
+    fastMode:'16:8', fasting:true, remain:3*3600+24*60+10, streak:12,
+    toast:'',
+  };
+
+  homeList=[
+    {name:'番茄炒蛋',image:'./assets/app/tomato-eggs-hero.webp',cuisine:'家常',taste:'酸甜鲜香',kcal:236,time:12,diff:'简单',ing:['番茄','鸡蛋','葱']},
+    {name:'香煎鸡胸沙拉',image:'./assets/app/chicken-salad.webp',cuisine:'轻食',taste:'清爽',kcal:348,time:18,diff:'简单',ing:['鸡胸','生菜','番茄']},
+    {name:'蓝莓香蕉燕麦',image:'./assets/app/oats-breakfast.webp',cuisine:'早餐',taste:'香甜',kcal:286,time:8,diff:'简单',ing:['燕麦','香蕉','蓝莓']},
+    {name:'家常麻辣香锅',image:'./assets/app/malatang-hero.webp',cuisine:'川味',taste:'麻辣',kcal:468,time:28,diff:'中等',ing:['青菜','豆腐','莲藕','肉片']},
+  ];
+  takeoutList=[
+    {name:'川味麻辣烫',taste:'麻辣鲜香',cat:'热汤'},
+    {name:'重庆冒菜',taste:'浓香微辣',cat:'冒菜'},
+    {name:'麻辣香锅',taste:'干香热辣',cat:'川味'},
+    {name:'酸辣粉',taste:'酸辣开胃',cat:'粉面'},
+  ];
+  ingredientPool=['鸡蛋','番茄','鸡胸','生菜','燕麦','香蕉','蓝莓','青菜','豆腐','莲藕','肉片','葱','蒜','米饭','青椒','土豆'];
+
+  componentDidMount(){ this._t=setInterval(()=>{ if(this.state.tab==='fast') this.setState(s=>({remain:Math.max(0,s.remain-1)})); else this.state.remain=Math.max(0,this.state.remain-1); },1000); }
+  componentWillUnmount(){ clearInterval(this._t); clearInterval(this._roll); clearTimeout(this._cam); clearTimeout(this._toast); clearTimeout(this._cf); }
+
+  flash(msg){ this.setState({toast:msg}); clearTimeout(this._toast); this._toast=setTimeout(()=>this.setState({toast:''}),1600); }
+
+  roll(kind){
+    if(this.state.rolling) return;
+    const list = kind==='takeout'?this.takeoutList:this.homeList;
+    const last = kind==='takeout'?this.state.takeoutLast:this.state.homeLast;
+    this.setState({rolling:true,showConfetti:false});
+    let n=0; const total=13;
+    clearInterval(this._roll);
+    this._roll=setInterval(()=>{
+      n++;
+      this.setState({rollDish:list[Math.floor(Math.random()*list.length)]});
+      if(n>=total){
+        clearInterval(this._roll);
+        let pick; do{pick=list[Math.floor(Math.random()*list.length)];}while(list.length>1&&pick===last);
+        if(kind==='takeout') this.setState(s=>({rolling:false,rollDish:pick,takeoutDish:pick,takeoutLast:pick,takeoutKey:s.takeoutKey+1,showConfetti:true}));
+        else this.setState(s=>({rolling:false,rollDish:pick,homeDish:pick,homeLast:pick,homeKey:s.homeKey+1,showConfetti:true}));
+        clearTimeout(this._cf); this._cf=setTimeout(()=>this.setState({showConfetti:false}),1400);
+      }
+    },78);
+  }
+
+  toggleIng(name){ this.setState(s=>({selIng:s.selIng.includes(name)?s.selIng.filter(x=>x!==name):[...s.selIng,name]})); }
+  addWish(name){ this.setState(s=>s.wishlist.includes(name)?{}:{wishlist:[...s.wishlist,name]}); this.flash('已加入想吃清单'); }
+  toggleFast(){ this.setState(s=>({fasting:!s.fasting,remain:s.fasting?8*3600:16*3600})); this.flash(this.state.fasting?'开始进食 · 计时中':'结束进食 · 断食开始'); }
+  openCam(){
+    clearTimeout(this._cam);
+    this.setState({camStep:'scanning'});
+    this._cam=setTimeout(()=>{
+      this._cam=null;
+      if(this.state.camStep==='scanning') this.setState({camStep:'result'});
+    },1700);
+  }
+  closeCam(){ clearTimeout(this._cam); this._cam=null; this.setState({camStep:'idle'}); }
+  switchTab(tab){ clearTimeout(this._cam); this._cam=null; this.setState({tab,camStep:'idle'}); }
+  addMeal(){ this.setState(s=>({meals:[...s.meals,{id:Date.now(),name:'番茄炒蛋',kcal:236,type:s.mealType,c:9,p:12,f:16,image:'./assets/app/tomato-eggs-hero.webp',t:'刚刚'}],camStep:'idle'})); this.flash('已记录到今日'+this.state.mealType); }
+
+  fmt(s){ const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60; const p=x=>String(x).padStart(2,'0'); return h+':'+p(m)+':'+p(ss); }
+
+  renderVals(){
+    const s=this.state;
+    const set=(k,v)=>()=>this.setState({[k]:v});
+    const RED='#2E7551', INK='#162019', MUTE='#778079';
+
+    const tShow = s.rolling&&s.eatMode==='takeout'?s.rollDish:s.takeoutDish;
+    const hShow = s.rolling&&s.eatMode==='home'?s.rollDish:s.homeDish;
+
+    const ingPool=this.ingredientPool.map(name=>{const on=s.selIng.includes(name);return{name,mark:on?'✓ ':'',bd:on?RED:'#E3E7E2',bg:on?'#EDF2ED':'#FFFFFF',fg:on?RED:'#5D675F',onClick:()=>this.toggleIng(name)};});
+    const ingResults=this.homeList.map(d=>{const miss=d.ing.filter(x=>!s.selIng.includes(x));return{...d,miss};}).sort((a,b)=>a.miss.length-b.miss.length).slice(0,6).map(d=>{
+      const ok=d.miss.length===0;
+      return {...d, badgeText: ok?'食材齐 · 可以做':('还缺 '+d.miss.join('、')), badgeStyle: ok?'background:#EDF2ED;color:#2E7551;font-size:10px;font-weight:800;padding:4px 8px;border-radius:6px':'background:#FDEBE7;color:#B54B36;font-size:10px;font-weight:800;padding:4px 8px;border-radius:6px'};
+    });
+    const ingReadyCount=this.homeList.filter(d=>d.ing.every(x=>s.selIng.includes(x))).length;
+
+    const tagColors={'早餐':['#FBF2DF','#8A651C'],'午餐':['#EDF2ED','#2E7551'],'晚餐':['#EEF3F7','#3D6CA8'],'加餐':['#FDEBE7','#B54B36']};
+    const meals=s.meals.map(m=>{const c=tagColors[m.type]||tagColors['午餐'];return{...m,tagStyle:`background:${c[0]};color:${c[1]};font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px`};});
+    const todayKcal=s.meals.reduce((a,m)=>a+m.kcal,0);
+    const remainKcal=Math.max(0,s.calTarget-todayKcal);
+    const calRingOff=276*(1-Math.min(1,todayKcal/s.calTarget));
+    const calPercent=Math.round(Math.min(1,todayKcal/s.calTarget)*100)+'%';
+    const carbG=s.meals.reduce((a,m)=>a+m.c,0), proG=s.meals.reduce((a,m)=>a+m.p,0), fatG=s.meals.reduce((a,m)=>a+m.f,0);
+
+    const total=s.fasting?16*3600:8*3600;
+    const ringOff=741*(1-Math.min(1,(total-s.remain)/total));
+    const dark=s.fasting;
+    const fastVals={
+      fastBg: dark?'#111A15':'#F7F8F5',
+      fastInk: dark?'#F7F8F5':INK,
+      fastMuted: dark?'#93A097':MUTE,
+      fastCardBg: dark?'#1A251E':'#FFFFFF',
+      fastLine: dark?'rgba(255,255,255,.08)':'#E3E7E2',
+      streakBg: dark?'#213329':'#EDF2ED',
+      streakFill: dark?'#F3B340':'#E85D3F',
+      ringTrack: dark?'rgba(255,255,255,.08)':'#E3E7E2',
+      ringColor: s.fasting?'#F3B340':'#2E7551',
+      phaseLabel: s.fasting?'断食进行中':'进食窗口中',
+      phaseSub: s.fasting?'距离进食':'距离断食',
+      remainStr: this.fmt(s.remain),
+      fastBtnBg: s.fasting?'#F3B340':'#173F2C',
+      fastBtnFg: s.fasting?'#162019':'#FFFFFF',
+      fastBtnLabel: s.fasting?'开始进食':'结束进食 · 开始断食',
+      ringOff,
+    };
+    const modes=['16:8','14:10','18:6','自定义'];
+    const fastModes=modes.map(m=>{const on=s.fastMode===m;return{label:m,bd:on?(dark?'#F3B340':'#2E7551'):(dark?'#314137':'#E3E7E2'),bg:on?(dark?'#27382E':'#EDF2ED'):'transparent',fg:on?(dark?'#F3B340':'#2E7551'):(dark?'#93A097':'#778079'),onClick:()=>{this.setState({fastMode:m});this.flash('已切换 '+m);}};});
+    const calDays=Array.from({length:28},(_,i)=>{const n=i+1;const done=[1,2,3,4,5,6,8,9,10,11,13,14,15,16,17,19,20,21,22].includes(n);const broke=[7,18].includes(n);const today=n===23;let bg,color,bd='transparent';if(today){bg='#F3B340';color='#162019';}else if(done){bg=dark?'#24382D':'#EDF2ED';color=dark?'#A8D5B9':'#2E7551';}else if(broke){bg=dark?'rgba(232,93,63,.16)':'#FDEBE7';color='#E85D3F';}else{bg='transparent';color=dark?'#5E6B63':'#778079';bd=dark?'rgba(255,255,255,.06)':'#E3E7E2';}return{n,style:`aspect-ratio:1;border:1px solid ${bd};border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:${bg};color:${color}`};});
+    const badges=[
+      {num:'7',label:'7 天',sub:'已解锁',op:1,ring:'#F3B340',fill:dark?'#28362E':'#FBF2DF',numColor:dark?'#F3B340':'#8A651C'},
+      {num:'30',label:'30 天',sub:'进行中',op:1,ring:'#2E7551',fill:dark?'#20382B':'#EDF2ED',numColor:dark?'#7BC195':'#2E7551'},
+      {num:'100',label:'100 天',sub:'12/100',op:.45,ring:dark?'#39473E':'#D8DEDA',fill:'transparent',numColor:dark?'#93A097':MUTE},
+    ];
+
+    const friends=[
+      {name:'柠檬酱',mono:'柠',avBg:'#EEF3F7',avFg:'#3D6CA8',days:128,streak:23,online:true,status:'今日已打卡',stBg:'#EDF2ED',stFg:'#2E7551',cheerLabel:'点赞',cheerBg:'#F2F4F2',cheerFg:'#5D675F'},
+      {name:'布丁',mono:'布',avBg:'#FBF2DF',avFg:'#8A651C',days:56,streak:8,online:true,status:'今日已打卡',stBg:'#EDF2ED',stFg:'#2E7551',cheerLabel:'点赞',cheerBg:'#F2F4F2',cheerFg:'#5D675F'},
+      {name:'土豆泥',mono:'土',avBg:'#FDEBE7',avFg:'#B54B36',days:12,streak:3,online:false,status:'还没打卡',stBg:'#FDEBE7',stFg:'#B54B36',cheerLabel:'催打卡',cheerBg:'#E85D3F',cheerFg:'#fff'},
+    ].map(f=>({...f,dotStyle:`position:absolute;right:-2px;bottom:-2px;width:13px;height:13px;border-radius:50%;border:2.5px solid #FFFFFF;background:${f.online?'#2E7551':'#8C948E'}`,onCheer:()=>this.flash(f.status==='还没打卡'?('已催 '+f.name+' 打卡'):('给 '+f.name+' 加油'))}));
+    const rank=[
+      {rk:'1',rkColor:'#A76F13',mono:'柠',bg:'#FBF2DF',fg:'#8A651C',name:'柠檬酱',streak:23},
+      {rk:'2',rkColor:MUTE,mono:'狐',bg:'#EDF2ED',fg:'#2E7551',name:'你',streak:12},
+      {rk:'3',rkColor:MUTE,mono:'布',bg:'#EEF3F7',fg:'#3D6CA8',name:'布丁',streak:8},
+    ];
+
+    const wallBadges=[
+      {num:'7',label:'连续',bg:'#FBF2DF',bd:'#F0DEB5',fg:'#8A651C',op:1},
+      {num:'50',label:'记录',bg:'#EDF2ED',bd:'#D6E4D9',fg:'#2E7551',op:1},
+      {num:'99',label:'识别',bg:'#EEF3F7',bd:'#DCE7F0',fg:'#3D6CA8',op:1},
+      {num:'100',label:'百日',bg:'transparent',bd:'#D8DEDA',fg:MUTE,op:.5},
+    ];
+    const settings=[
+      {tag:'卡',label:'每日热量目标',value:s.calTarget+' 千卡',bg:'#EDF2ED',fg:'#2E7551',onClick:()=>this.flash('打开目标设置')},
+      {tag:'铃',label:'提醒设置',value:'进食 / 记录',bg:'#EEF3F7',fg:'#3D6CA8',onClick:()=>this.flash('打开提醒设置')},
+      {tag:'忌',label:'忌口与过敏',value:'香菜',bg:'#FDEBE7',fg:'#B54B36',onClick:()=>this.flash('打开忌口设置')},
+      {tag:'私',label:'隐私 · 好友可见',value:'仅好友',bg:'#F2F4F2',fg:'#5D675F',onClick:()=>this.flash('打开隐私设置')},
+      {tag:'VIP',label:'会员中心',value:'去开通',bg:'#173F2C',fg:'#F3B340',onClick:()=>this.flash('会员：去广告 · 高级菜谱')},
+    ];
+
+    const cols=['#2E7551','#E85D3F','#F3B340','#3D6CA8','#173F2C'];
+    const confetti=Array.from({length:16},(_,i)=>{const left=(i*5.9+5)%94;const bg=cols[i%5];const dur=(0.85+(i%4)*0.16).toFixed(2);const delay=((i%5)*0.05).toFixed(2);const size=i%3?8:11;return{style:`position:absolute;top:-12px;left:${left}%;width:${size}px;height:${size}px;background:${bg};border-radius:2px;animation:conf ${dur}s ${delay}s ease-in forwards`};});
+
+    const navCol=k=>s.tab===k?'#173F2C':'#89928B';
+    const navBg=k=>s.tab===k?'#EDF2ED':'transparent';
+    return {
+      isEat:s.tab==='eat', isCal:s.tab==='cal', isFast:s.tab==='fast', isFriends:s.tab==='friends', isMe:s.tab==='me',
+      navEat:()=>this.switchTab('eat'), navCal:()=>this.switchTab('cal'), navFast:()=>this.switchTab('fast'), navFriends:()=>this.switchTab('friends'), navMe:()=>this.switchTab('me'),
+      colEat:navCol('eat'), colCal:navCol('cal'), colFast:navCol('fast'), colFriends:navCol('friends'), colMe:navCol('me'),
+      bgEat:navBg('eat'), bgCal:navBg('cal'), bgFast:navBg('fast'), bgFriends:navBg('friends'), bgMe:navBg('me'),
+      isTakeout:s.eatMode==='takeout', isHome:s.eatMode==='home',
+      setTakeout:set('eatMode','takeout'), setHome:set('eatMode','home'),
+      modeShift:s.eatMode==='takeout'?'0%':'100%',
+      takeoutColor:s.eatMode==='takeout'?INK:MUTE, homeColor:s.eatMode==='home'?INK:MUTE,
+      takeoutShown:tShow, noTakeout:!tShow, hasTakeout:!!s.takeoutDish&&!s.rolling, showTakeoutPrimary:!s.takeoutDish||s.rolling,
+      takeoutKey:s.rolling?'roll':('r'+s.takeoutKey),
+      takeoutAnim:s.rolling?'shake .16s ease infinite':'pop .45s ease both',
+      rollTakeout:()=>this.roll('takeout'),
+      rollLabel:s.rolling?'正在抽取…':(s.takeoutDish?'再摇一次':'替我决定'),
+      eatTakeout:()=>this.flash('去外卖平台点「'+s.takeoutDish.name+'」'),
+      isHomeRandom:s.homeSub==='random', isHomeIng:s.homeSub==='ingredients',
+      setHomeRandom:set('homeSub','random'), setHomeIng:set('homeSub','ingredients'),
+      hrColor:s.homeSub==='random'?RED:MUTE, hiColor:s.homeSub==='ingredients'?RED:MUTE,
+      hrLine:s.homeSub==='random'?RED:'transparent', hiLine:s.homeSub==='ingredients'?RED:'transparent',
+      chipQuick:()=>this.flash('已按耗时排序'), chipVeg:()=>this.flash('已筛选素菜'), chipLow:()=>this.flash('已筛选低卡'), chipCuisine:()=>this.flash('已筛选川菜'),
+      homeShown:hShow, homeKey:s.rolling?'roll':('h'+s.homeKey),
+      homeAnim:s.rolling?'shake .16s ease infinite':'pop .45s ease both',
+      rollHome:()=>this.roll('home'),
+      eatHome:()=>{ if(s.homeDish){ this.setState(st=>({meals:[...st.meals,{id:Date.now(),name:s.homeDish.name,kcal:s.homeDish.kcal,type:'晚餐',c:0,p:0,f:0,image:s.homeDish.image,t:'刚刚'}]})); this.flash('菜谱已打开，可按步骤开始烹饪'); } },
+      wishHome:()=>{ if(s.homeDish) this.addWish(s.homeDish.name); },
+      wishlist:s.wishlist, wishCount:s.wishlist.length,
+      ingPool, ingResults, ingReadyCount,
+      showConfetti:s.showConfetti, confetti,
+      meals, mealCount:meals.length, todayKcal, remainKcal, calTarget:s.calTarget, calRingOff, calPercent, carbG, proG, fatG,
+      openCam:()=>this.openCam(),
+      closeCam:()=>this.closeCam(),
+      camOpen:s.camStep!=='idle', camScanning:s.camStep==='scanning', camResult:s.camStep==='result',
+      mealTypes:['早餐','午餐','晚餐','加餐'].map(t=>{const on=s.mealType===t;return{label:t,bd:on?RED:'#E3E7E2',bg:on?'#EDF2ED':'#FFFFFF',fg:on?RED:MUTE,onClick:()=>this.setState({mealType:t})};}),
+      addMeal:()=>this.addMeal(),
+      ...fastVals, fastMode:s.fastMode, toggleFast:()=>this.toggleFast(), streak:s.streak, fastModes, calDays, badges,
+      friends, rank, toastAdd:()=>this.flash('扫码 / 邀请码 添加好友'),
+      wallBadges, settings,
+      toastNotice:()=>this.flash('今天 18:30 记得结束进食'),
+      toastHistory:()=>this.flash('已打开饮食趋势'),
+      toastScanIng:()=>this.flash('拍下冰箱，自动录入食材'),
+      toastCorrect:()=>this.flash('可以修改菜名、份量与营养'),
+      toastEditProfile:()=>this.flash('已打开个人资料编辑'),
+      toast:s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
