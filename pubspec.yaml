@@ -1,0 +1,73 @@
+name: foods_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+workspace:
+  - apps/client
+
+dev_dependencies:
+  melos: ^8.2.2
+
+melos:
+  scripts:
+    client:format:
+      description: Format the Flutter client.
+      exec: dart format .
+      packageFilters:
+        scope: foods_client
+
+    client:format:check:
+      description: Verify Flutter client formatting without changing files.
+      exec: dart format --output=none --set-exit-if-changed .
+      packageFilters:
+        scope: foods_client
+
+    client:analyze:
+      description: Run Flutter static analysis.
+      exec: flutter analyze
+      packageFilters:
+        scope: foods_client
+
+    client:test:
+      description: Run Flutter client tests.
+      exec: flutter test
+      packageFilters:
+        scope: foods_client
+
+    client:check:
+      description: Run all Flutter client checks.
+      steps:
+        - client:format:check
+        - client:analyze
+        - client:test
+
+    server:format:
+      description: Verify Python server formatting.
+      run: uv run --directory server --locked ruff format --check .
+
+    server:lint:
+      description: Run Python server lint checks.
+      run: uv run --directory server --locked ruff check .
+
+    server:typecheck:
+      description: Run Python server type checks.
+      run: uv run --directory server --locked mypy src tests scripts
+
+    server:test:
+      description: Run Python server tests.
+      run: uv run --directory server --locked pytest
+
+    server:contract:
+      description: Verify the committed OpenAPI contract.
+      run: uv run --directory server --locked python scripts/export_openapi.py --check
+
+    server:check:
+      description: Run all Python server checks.
+      steps:
+        - server:format
+        - server:lint
+        - server:typecheck
+        - server:test
+        - server:contract

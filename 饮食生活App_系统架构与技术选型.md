@@ -515,7 +515,7 @@ Docker Compose 默认启动基础设施：
 - MinIO，模拟 S3。
 - 可选的邮件/短信 Mock。
 
-Compose 命令统一从仓库根目录执行。Python 命令统一以 `server/` 为工作目录，`pyproject.toml` 配置 `[tool.fastapi] entrypoint = "ordin.api.main:app"`，本地 API 使用 `uv run fastapi dev` 热重载。Celery 官方不支持直接在 Windows 进程中运行，因此 Windows 开发机通过 Docker/WSL2 启动 Linux Worker；Compose 的 `backend` profile 同时提供 API 与 Worker 容器，供跨平台集成测试使用。
+Compose 命令统一从仓库根目录执行。Python 命令统一以 `server/` 为工作目录，`pyproject.toml` 配置 `[tool.fastapi] entrypoint = "ordin.api.main:app"`。Linux/macOS 本地 API 可使用 `uv run fastapi dev`；中文 Windows 控制台统一使用 `uv run uvicorn ordin.api.main:app --reload`，避免 FastAPI CLI 富文本启动横幅触发 GBK 编码错误。Celery 官方不支持直接在 Windows 进程中运行，因此 Windows 开发机通过 Docker/WSL2 启动 Linux Worker；Compose 的 `backend` profile 同时提供 API 与 Worker 容器，供跨平台集成测试使用。
 
 ### 13.2 生产环境
 

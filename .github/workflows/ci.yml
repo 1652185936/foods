@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  client:
+    name: Flutter client
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/client
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.44.4
+          cache: true
+
+      - name: Restore locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  server:
+    name: FastAPI server
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: "0.11.29"
+          working-directory: server
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+
+      - name: Check dependency lock
+        run: uv lock --check
+
+      - name: Sync locked dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Check formatting
+        run: uv run --locked ruff format --check .
+
+      - name: Lint
+        run: uv run --locked ruff check .
+
+      - name: Type check
+        run: uv run --locked mypy src tests scripts
+
+      - name: Test
+        run: uv run --locked pytest
+
+      - name: Check OpenAPI contract
+        run: uv run --locked python scripts/export_openapi.py --check
