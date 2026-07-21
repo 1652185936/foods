@@ -35,7 +35,7 @@
 - [x] 通用 CI 固定 Flutter/Python/uv 版本，恢复锁文件，启动 PostgreSQL/Redis/MinIO，执行迁移、客户端/服务端测试与契约检查。证据：[CI 工作流](../.github/workflows/ci.yml)。该项只证明工作流定义已进入仓库，不代表当前提交的 GitHub run 已成功。
 - [x] Android、iOS 无签名、Windows、macOS 的 release-mode 编译检查已进入独立 CI，产物明确标记为不可分发。证据：[平台构建工作流](../.github/workflows/platform-builds.yml)。
 - [x] 本地 Android release AAB 编译检查已通过；产物经 `jarsigner` 确认为未签名，缺少签名变量且不开显式检查开关时构建会失败关闭。证据：[验证记录](./VERIFICATION.md)。
-- [x] Android 14 模拟器已完成 OTP、餐食、同步、识别依赖链路、数据导出/注销和 SQLCipher 平台测试，并人工检查 9 张 1080x2400 截图。证据：[Android 证据](./evidence/android/README.md)。
+- [x] Android 14 模拟器已完成 OTP、餐食、同步、识别依赖链路、数据导出/注销和 SQLCipher 平台测试，并人工检查 2026-07-20 至 2026-07-21 采集的 22 张 1080x2400 截图（页面流程于 2026-07-21 通过本地 Compose 后端及模拟账号/数据采集）；截图不包含真实个人信息。证据：[Android 证据](./evidence/android/README.md)。
 - [x] 服务端镜像以非 root 用户运行；CI 检查只读文件系统、移除 capabilities 和 `no-new-privileges`。证据：[Dockerfile](../server/Dockerfile)、[镜像构建工作流](../.github/workflows/server-image-build.yml)。
 - [x] 生产 Compose 由仓库名和 64 位 SHA-256 强制构造 `repository@sha256:digest`，并使用外部 TLS 入口和托管 PostgreSQL/Redis/S3，设置只读根文件系统、资源限制、健康检查、滚动更新和回滚策略。证据：[生产 Compose](../deploy/compose.production.yml)及[镜像工作流](../.github/workflows/server-image-build.yml)。
 - [x] production/staging 配置拒绝 HTTP origin、无 TLS 数据库/Redis、弱密码、开发 OTP 与模板凭据。证据：[服务端配置](../server/src/ordin/infrastructure/config.py)、[安全配置测试](../server/tests/unit/test_security_config.py)。
