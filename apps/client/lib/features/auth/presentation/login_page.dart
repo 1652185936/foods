@@ -136,8 +136,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             FilteringTextInputFormatter.allow(RegExp(r'[+0-9]')),
           ],
           decoration: const InputDecoration(
-            labelText: '手机号码（含国家/地区码）',
-            hintText: '+8613812345678',
+            labelText: '手机号码',
+            hintText: '13812345678',
             prefixIcon: Icon(LucideIcons.smartphone),
             border: OutlineInputBorder(),
           ),

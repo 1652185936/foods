@@ -92,6 +92,7 @@ enum AuthActionResult { applied, ignored, failed }
 
 final class AuthController extends Notifier<AuthViewState> {
   static final _e164 = RegExp(r'^\+[1-9][0-9]{7,14}$');
+  static final _mainlandChinaMobile = RegExp(r'^1[3-9][0-9]{9}$');
   static final _otp = RegExp(r'^[0-9]{6}$');
 
   StreamSubscription<void>? _clearedSubscription;
@@ -132,21 +133,30 @@ final class AuthController extends Notifier<AuthViewState> {
     if (current is! AuthSignedOut || current.busy) {
       return Future.value(AuthActionResult.ignored);
     }
-    if (!_e164.hasMatch(phoneNumber)) {
+    final normalizedPhoneNumber = _normalizePhoneNumber(phoneNumber);
+    if (normalizedPhoneNumber == null) {
       state = AuthSignedOut(
-        phoneNumber: phoneNumber,
-        errorMessage: '请输入含国家/地区码的手机号（如 +8613812345678）',
+        phoneNumber: phoneNumber.trim(),
+        errorMessage: '请输入正确的手机号；中国大陆号码可直接输入，其他地区请以 +国家码 开头',
         noticeMessage: current.noticeMessage,
       );
       return Future.value(AuthActionResult.failed);
     }
     return _requestOtp(
-      phoneNumber: phoneNumber,
+      phoneNumber: normalizedPhoneNumber,
       previous: AuthSignedOut(
-        phoneNumber: phoneNumber,
+        phoneNumber: normalizedPhoneNumber,
         noticeMessage: current.noticeMessage,
       ),
     );
+  }
+
+  static String? _normalizePhoneNumber(String value) {
+    final phoneNumber = value.trim();
+    if (_mainlandChinaMobile.hasMatch(phoneNumber)) {
+      return '+86$phoneNumber';
+    }
+    return _e164.hasMatch(phoneNumber) ? phoneNumber : null;
   }
 
   Future<AuthActionResult> resendOtp() {

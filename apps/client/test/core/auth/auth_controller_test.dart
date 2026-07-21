@@ -120,23 +120,44 @@ void main() {
     },
   );
 
-  test('validates localized inputs before calling the repository', () async {
-    final repository = _FakeAuthSessionRepository();
+  test('normalizes phone numbers and validates localized inputs', () async {
+    String? requestedPhoneNumber;
+    final repository = _FakeAuthSessionRepository()
+      ..challengeHandler = (phoneNumber) async {
+        requestedPhoneNumber = phoneNumber;
+        return _challenge(now);
+      };
     final fixture = _fixture(repository, now);
     addTearDown(fixture.dispose);
     await _flush();
 
     final controller = fixture.container.read(authControllerProvider.notifier);
-    expect(await controller.requestOtp('13812345678'), AuthActionResult.failed);
+    expect(
+      await controller.requestOtp('13812345678'),
+      AuthActionResult.applied,
+    );
     var state = fixture.container.read(authControllerProvider) as AuthSignedOut;
-    expect(state.errorMessage, contains('国家/地区码'));
-    expect(repository.challengeCalls, 0);
+    expect(requestedPhoneNumber, '+8613812345678');
+    expect(state.phoneNumber, '+8613812345678');
 
-    await controller.requestOtp('+8613812345678');
+    controller.editPhoneNumber();
+    expect(
+      await controller.requestOtp('+971501234567'),
+      AuthActionResult.applied,
+    );
+    expect(requestedPhoneNumber, '+971501234567');
+    expect(repository.challengeCalls, 2);
+
     expect(await controller.verifyOtp('12ab'), AuthActionResult.failed);
     state = fixture.container.read(authControllerProvider) as AuthSignedOut;
     expect(state.errorMessage, '请输入6位验证码');
     expect(repository.verifyCalls, 0);
+
+    controller.editPhoneNumber();
+    expect(await controller.requestOtp('12345'), AuthActionResult.failed);
+    state = fixture.container.read(authControllerProvider) as AuthSignedOut;
+    expect(state.errorMessage, contains('请输入正确的手机号'));
+    expect(repository.challengeCalls, 2);
   });
 
   test(

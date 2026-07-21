@@ -56,7 +56,12 @@ void main() {
         tester.platformDispatcher.clearTextScaleFactorTestValue();
       });
       final verification = Completer<AuthSession>();
+      String? requestedPhoneNumber;
       final repository = FakeAuthSessionRepository(now)
+        ..challengeHandler = (phoneNumber) async {
+          requestedPhoneNumber = phoneNumber;
+          return authTestChallenge(now);
+        }
         ..verifyHandler = (_, _) => verification.future;
       final events = AuthEventFixture();
       addTearDown(events.dispose);
@@ -70,19 +75,10 @@ void main() {
       );
       await tester.ensureVisible(find.byKey(const Key('auth-request-code')));
       await tester.tap(find.byKey(const Key('auth-request-code')));
-      await tester.pump();
-      expect(find.text('请输入含国家/地区码的手机号（如 +8613812345678）'), findsOneWidget);
-      expect(repository.challengeCalls, 0);
-
-      await tester.enterText(
-        find.byKey(const Key('auth-phone-input')),
-        '+8613812345678',
-      );
-      await tester.ensureVisible(find.byKey(const Key('auth-request-code')));
-      await tester.tap(find.byKey(const Key('auth-request-code')));
       await tester.pumpAndSettle();
       expect(find.text('输入验证码'), findsOneWidget);
       expect(find.textContaining('30s 后重发'), findsOneWidget);
+      expect(requestedPhoneNumber, '+8613812345678');
 
       await tester.enterText(
         find.byKey(const Key('auth-code-input')),
